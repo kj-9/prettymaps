@@ -1,0 +1,11 @@
+{
+  "python.formatting.provider": "black",
+  "python.languageServer": "Pylance",
+  "python.linting.mypyEnabled": true,
+  "[python]": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll": true,
+      "source.organizeImports": true
+    }
+  },
+}
