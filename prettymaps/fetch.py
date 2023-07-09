@@ -25,9 +25,6 @@ from shapely.geometry import (
     box,
     Point,
     Polygon,
-    MultiPolygon,
-    LineString,
-    MultiLineString,
 )
 from geopandas import GeoDataFrame
 from shapely.affinity import rotate
@@ -144,6 +141,8 @@ def get_gdf(
     bbox = box(*perimeter_with_tolerance.bounds)
 
     if layer == "hillshade":
+        raise NotImplementedError()
+        """
         gdf = get_hillshade(
             mask_elevation(get_elevation(elevation), perimeter),
             pad=pad,
@@ -153,7 +152,10 @@ def get_gdf(
             min_height=min_height,
             max_height=max_height,
         )
+        """
     elif layer == "level_curves":
+        raise NotImplementedError()
+        """
         gdf = get_level_curves(
             mask_elevation(get_elevation(elevation), perimeter),
             pad=pad,
@@ -161,6 +163,7 @@ def get_gdf(
             min_height=min_height,
             max_height=max_height,
         )
+        """
     elif layer in ["streets", "railway", "waterway"]:
         graph = ox.graph_from_polygon(
             bbox,

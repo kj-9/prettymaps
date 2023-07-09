@@ -16,38 +16,37 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-import re
-import os
 import json
-import yaml
+import os
 
 # import IPython
 import pathlib
 import warnings
+from copy import deepcopy
+from dataclasses import dataclass
+from typing import Dict, Iterable, List, Optional, Tuple, Union
+
+import geopandas as gp
 import matplotlib
-import shapely.ops
 import numpy as np
 import osmnx as ox
 import pandas as pd
-import geopandas as gp
 import shapely.affinity
-from copy import deepcopy
-from .fetch import get_gdfs
-from dataclasses import dataclass
+import shapely.ops
 from matplotlib import pyplot as plt
-from matplotlib.colors import hex2color
 from matplotlib.patches import Path, PathPatch
-from typing import Optional, Union, Tuple, List, Dict, Any, Iterable
-from shapely.geometry.base import BaseGeometry
 from shapely.geometry import (
-    Point,
+    GeometryCollection,
     LineString,
     MultiLineString,
-    Polygon,
     MultiPolygon,
-    GeometryCollection,
+    Point,
+    Polygon,
     box,
 )
+from shapely.geometry.base import BaseGeometry
+
+from .fetch import get_gdfs
 
 # import vsketch
 
@@ -703,7 +702,7 @@ def override_preset(
         dilate = params["dilate"]
 
     # Delete layers marked as 'False' in the parameter dict
-    for layer in [key for key in layers.keys() if layers[key] == False]:
+    for layer in [key for key in layers.keys() if layers[key] is False]:
         del layers[layer]
 
     # Return overriden presets
@@ -979,7 +978,7 @@ def plot(
         )
 
     # 10. Draw credit message
-    if (mode == "matplotlib") and (credit != False) and (not multiplot):
+    if (mode == "matplotlib") and (credit is not False) and (not multiplot):
         draw_text(credit, background)
 
     # 11. Ajust figure and create PIL Image
@@ -1001,7 +1000,7 @@ def plot(
 
 def multiplot(*subplots, figsize=None, credit={}, **kwargs):
 
-    fig = plt.figure(figsize=figsize)
+    plt.figure(figsize=figsize)
     ax = plt.subplot(111, aspect="equal")
 
     mode = "plotter" if "plotter" in kwargs and kwargs["plotter"] else "matplotlib"
@@ -1031,7 +1030,9 @@ def multiplot(*subplots, figsize=None, credit={}, **kwargs):
         if "show" in kwargs and not kwargs["show"]:
             plt.close()
 
-        if credit != False:
+        if credit is not False:
             backgrounds = [result.background for result in subplots_results]
+            global_background = box(*shapely.ops.unary_union(backgrounds).bounds)
+            draw_text(credit, global_background)
             global_background = box(*shapely.ops.unary_union(backgrounds).bounds)
             draw_text(credit, global_background)
