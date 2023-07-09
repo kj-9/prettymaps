@@ -67,8 +67,7 @@ def get_boundary(query, radius, circle=False, rotation=0):
             geometry=[
                 rotate(
                     Polygon(
-                        [(x - r, y - r), (x + r, y - r),
-                         (x + r, y + r), (x - r, y + r)]
+                        [(x - r, y - r), (x + r, y - r), (x + r, y + r), (x - r, y + r)]
                     ),
                     rotation,
                 )
@@ -89,8 +88,7 @@ def get_perimeter(
 
     if radius:
         # Perimeter is a circular or square shape
-        perimeter = get_boundary(
-            query, radius, circle=circle, rotation=rotation)
+        perimeter = get_boundary(query, radius, circle=circle, rotation=rotation)
     else:
         # Perimeter is a OSM or user-provided polygon
         if parse_query(query) == "polygon":
@@ -140,8 +138,7 @@ def get_gdf(
     perimeter_with_tolerance = (
         ox.project_gdf(perimeter).buffer(perimeter_tolerance).to_crs(4326)
     )
-    perimeter_with_tolerance = unary_union(
-        perimeter_with_tolerance.geometry).buffer(0)
+    perimeter_with_tolerance = unary_union(perimeter_with_tolerance.geometry).buffer(0)
 
     # Fetch from perimeter's bounding box, to avoid missing some geometries
     bbox = box(*perimeter_with_tolerance.bounds)
@@ -203,19 +200,17 @@ def get_gdfs(query, layers_dict, radius, dilate, rotation=0) -> dict:
 
     # Get perimeter
     perimeter = get_perimeter(
-        query,
-        radius=radius,
-        rotation=rotation,
-        dilate=dilate,
-        **perimeter_kwargs
+        query, radius=radius, rotation=rotation, dilate=dilate, **perimeter_kwargs
     )
 
     # Get other layers as GeoDataFrames
     gdfs = {"perimeter": perimeter}
-    gdfs.update({
-        layer: get_gdf(layer, perimeter, **kwargs)
-        for layer, kwargs in layers_dict.items()
-        if layer != "perimeter"
-    })
+    gdfs.update(
+        {
+            layer: get_gdf(layer, perimeter, **kwargs)
+            for layer, kwargs in layers_dict.items()
+            if layer != "perimeter"
+        }
+    )
 
     return gdfs

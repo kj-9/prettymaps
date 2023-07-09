@@ -1,96 +1,96 @@
 {
-    "layers": {
-        "streets": {
-            "width": {
-                "trunk": 6,
-                "primary": 6,
-                "secondary": 5,
-                "tertiary": 4,
-                "residential": 3.5,
-                "pedestrian": 3,
-                "footway": 3,
-                "path": 3
-            }
-        },
-        "building": {
-            "tags": {
-                "building": true,
-                "leisure": [
-                    "track",
-                    "pitch"
-                ]
-            }
-        },
-        "water": {
-            "tags": {
-                "natural": [
-                    "water",
-                    "bay"
-                ]
-            }
-        },
-        "park": {
-            "tags": {
-                "leisure": "park"
-            }
-        },
-        "forest": {
-            "tags": {
-                "landuse": "forest"
-            }
-        },
-        "garden": {
-            "tags": {
-                "leisure": "garden"
-            }
-        }
+  "circle": null,
+  "dilate": 0,
+  "layers": {
+    "building": {
+      "tags": {
+        "building": true,
+        "leisure": [
+          "track",
+          "pitch"
+        ]
+      }
     },
-    "style": {
-        "perimeter": {
-            "fill": false,
-            "lw": 0,
-            "zorder": 0
-        },
-        "park": {
-            "fc": "#AABD8C",
-            "ec": "#87996b",
-            "lw": 1,
-            "zorder": 1
-        },
-        "forest": {
-            "fc": "#78A58D",
-            "ec": "#658a76",
-            "lw": 1,
-            "zorder": 1
-        },
-        "garden": {
-            "fc": "#a9d1a9",
-            "ec": "#8ab58a",
-            "lw": 1,
-            "zorder": 1
-        },
-        "water": {
-            "fc": "#92D5F2",
-            "ec": "#6da8c2",
-            "lw": 1,
-            "zorder": 2
-        },
-        "streets": {
-            "fc": "#F1E6D0",
-            "ec": "#2F3737",
-            "lw": 1.5,
-            "zorder": 3
-        },
-        "building": {
-            "palette": [
-                "#fff"
-            ],
-            "ec": "#2F3737",
-            "lw": 1,
-            "zorder": 4
-        }
+    "forest": {
+      "tags": {
+        "landuse": "forest"
+      }
     },
-    "circle": null,
-    "radius": null,
-    "dilate": 0
+    "garden": {
+      "tags": {
+        "leisure": "garden"
+      }
+    },
+    "park": {
+      "tags": {
+        "leisure": "park"
+      }
+    },
+    "streets": {
+      "width": {
+        "footway": 3,
+        "path": 3,
+        "pedestrian": 3,
+        "primary": 6,
+        "residential": 3.5,
+        "secondary": 5,
+        "tertiary": 4,
+        "trunk": 6
+      }
+    },
+    "water": {
+      "tags": {
+        "natural": [
+          "water",
+          "bay"
+        ]
+      }
+    }
+  },
+  "radius": null,
+  "style": {
+    "building": {
+      "ec": "#2F3737",
+      "lw": 1,
+      "palette": [
+        "#fff"
+      ],
+      "zorder": 4
+    },
+    "forest": {
+      "ec": "#658a76",
+      "fc": "#78A58D",
+      "lw": 1,
+      "zorder": 1
+    },
+    "garden": {
+      "ec": "#8ab58a",
+      "fc": "#a9d1a9",
+      "lw": 1,
+      "zorder": 1
+    },
+    "park": {
+      "ec": "#87996b",
+      "fc": "#AABD8C",
+      "lw": 1,
+      "zorder": 1
+    },
+    "perimeter": {
+      "fill": false,
+      "lw": 0,
+      "zorder": 0
+    },
+    "streets": {
+      "ec": "#2F3737",
+      "fc": "#F1E6D0",
+      "lw": 1.5,
+      "zorder": 3
+    },
+    "water": {
+      "ec": "#6da8c2",
+      "fc": "#92D5F2",
+      "lw": 1,
+      "zorder": 2
+    }
+  }
 }

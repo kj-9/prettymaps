@@ -1,118 +1,118 @@
 {
-    "layers": {
-        "perimeter": {},
-        "streets": {
-            "custom_filter": "[\"highway\"~\"motorway|trunk|primary|secondary|tertiary|residential|service|unclassified|pedestrian|footway\"]",
-            "width": {
-                "motorway": 5,
-                "trunk": 5,
-                "primary": 4.5,
-                "secondary": 4,
-                "tertiary": 3.5,
-                "residential": 3,
-                "service": 2,
-                "unclassified": 2,
-                "pedestrian": 2,
-                "footway": 1
-            }
-        },
-        "building": {
-            "tags": {
-                "building": true,
-                "landuse": "construction"
-            },
-            "union": false
-        },
-        "water": {
-            "tags": {
-                "natural": [
-                    "water",
-                    "bay"
-                ]
-            }
-        },
-        "green": {
-            "tags": {
-                "landuse": "grass",
-                "natural": [
-                    "island",
-                    "wood"
-                ],
-                "leisure": "park"
-            }
-        },
-        "forest": {
-            "tags": {
-                "landuse": "forest"
-            }
-        },
-        "parking": {
-            "tags": {
-                "amenity": "parking",
-                "highway": "pedestrian",
-                "man_made": "pier"
-            }
-        }
+  "circle": true,
+  "dilate": 0,
+  "layers": {
+    "building": {
+      "tags": {
+        "building": true,
+        "landuse": "construction"
+      },
+      "union": false
     },
-    "style": {
-        "background": {
-            "fc": "#F2F4CB",
-            "ec": "#dadbc1",
-            "hatch": "ooo...",
-            "zorder": -1
-        },
-        "perimeter": {
-            "fc": "#F2F4CB",
-            "ec": "#dadbc1",
-            "lw": 0,
-            "hatch": "ooo...",
-            "zorder": 0
-        },
-        "green": {
-            "fc": "#D0F1BF",
-            "ec": "#2F3737",
-            "lw": 1,
-            "zorder": 1
-        },
-        "forest": {
-            "fc": "#64B96A",
-            "ec": "#2F3737",
-            "lw": 1,
-            "zorder": 1
-        },
-        "water": {
-            "fc": "#a1e3ff",
-            "ec": "#2F3737",
-            "hatch": "ooo...",
-            "hatch_c": "#85c9e6",
-            "lw": 1,
-            "zorder": 2
-        },
-        "parking": {
-            "fc": "#F2F4CB",
-            "ec": "#2F3737",
-            "lw": 1,
-            "zorder": 3
-        },
-        "streets": {
-            "fc": "#2F3737",
-            "ec": "#475657",
-            "alpha": 1,
-            "lw": 0,
-            "zorder": 3
-        },
-        "building": {
-            "palette": [
-                "#FFC857",
-                "#E9724C",
-                "#C5283D"
-            ],
-            "ec": "#2F3737",
-            "lw": 0.5,
-            "zorder": 4
-        }
+    "forest": {
+      "tags": {
+        "landuse": "forest"
+      }
     },
-    "circle": true,
-    "radius": 1100,
-    "dilate": 0
+    "green": {
+      "tags": {
+        "landuse": "grass",
+        "leisure": "park",
+        "natural": [
+          "island",
+          "wood"
+        ]
+      }
+    },
+    "parking": {
+      "tags": {
+        "amenity": "parking",
+        "highway": "pedestrian",
+        "man_made": "pier"
+      }
+    },
+    "perimeter": {},
+    "streets": {
+      "custom_filter": "[\"highway\"~\"motorway|trunk|primary|secondary|tertiary|residential|service|unclassified|pedestrian|footway\"]",
+      "width": {
+        "footway": 1,
+        "motorway": 5,
+        "pedestrian": 2,
+        "primary": 4.5,
+        "residential": 3,
+        "secondary": 4,
+        "service": 2,
+        "tertiary": 3.5,
+        "trunk": 5,
+        "unclassified": 2
+      }
+    },
+    "water": {
+      "tags": {
+        "natural": [
+          "water",
+          "bay"
+        ]
+      }
+    }
+  },
+  "radius": 1100,
+  "style": {
+    "background": {
+      "ec": "#dadbc1",
+      "fc": "#F2F4CB",
+      "hatch": "ooo...",
+      "zorder": -1
+    },
+    "building": {
+      "ec": "#2F3737",
+      "lw": 0.5,
+      "palette": [
+        "#FFC857",
+        "#E9724C",
+        "#C5283D"
+      ],
+      "zorder": 4
+    },
+    "forest": {
+      "ec": "#2F3737",
+      "fc": "#64B96A",
+      "lw": 1,
+      "zorder": 1
+    },
+    "green": {
+      "ec": "#2F3737",
+      "fc": "#D0F1BF",
+      "lw": 1,
+      "zorder": 1
+    },
+    "parking": {
+      "ec": "#2F3737",
+      "fc": "#F2F4CB",
+      "lw": 1,
+      "zorder": 3
+    },
+    "perimeter": {
+      "ec": "#dadbc1",
+      "fc": "#F2F4CB",
+      "hatch": "ooo...",
+      "lw": 0,
+      "zorder": 0
+    },
+    "streets": {
+      "alpha": 1,
+      "ec": "#475657",
+      "fc": "#2F3737",
+      "lw": 0,
+      "zorder": 3
+    },
+    "water": {
+      "ec": "#2F3737",
+      "fc": "#a1e3ff",
+      "hatch": "ooo...",
+      "hatch_c": "#85c9e6",
+      "lw": 1,
+      "zorder": 2
+    }
+  }
 }

@@ -1,1 +1,121 @@
-{"layers": {"perimeter": {}, "streets": {"width": {"motorway": 12, "trunk": 12, "primary": 11, "secondary": 10, "tertiary": 9, "residential": 8}}, "park": {"tags": {"leisure": "nature_reserve", "landuse": "military", "boundary": "protected_area", "place": "square", "natural": "grassland", "amenity": "hospital"}}, "grass": {"tags": {"landuse": "grass", "natural": "wood"}}, "wetland": {"tags": {"natural": "scrub"}}, "beach": {"tags": {"natural": "beach"}}, "water": {"tags": {"natural": "water"}}, "pedestrian": {"tags": {"area:highway": "pedestrian"}}, "building": {"tags": {"building": true}}}, "style": {"perimeter": {"ec": "#0F110C", "fill": false, "lw": 0}, "park": {"fc": "#AAD897", "ec": "#8bc49e", "lw": 0, "zorder": 1, "hatch": "ooo..."}, "grass": {"fc": "#72C07A", "ec": "#64a38d", "lw": 0, "zorder": 1, "hatch": "ooo..."}, "wetland": {"fc": "#D2D68D", "ec": "#AEB441", "lw": 0, "zorder": 3, "hatch": "ooo..."}, "water": {"fc": "#6CCFF6", "ec": "#59adcf", "lw": 0, "zorder": 2, "hatch": "ooo..."}, "beach": {"fc": "#F2E3BC", "ec": "#EBD499", "lw": 0, "zorder": 2, "hatch": "ooo..."}, "pedestrian": {"fc": "#7BC950", "ec": "#638475", "lw": 0, "zorder": 2, "hatch": "ooo..."}, "streets": {"fc": "#898989", "ec": "#706f6f", "zorder": 3, "lw": 0, "hatch": "ooo..."}, "building": {"fc": "#E7A89C", "ec": "#E7A89C", "lw": 0, "zorder": 0}}, "circle": null, "radius": null, "dilate": 0}
+{
+  "circle": null,
+  "dilate": 0,
+  "layers": {
+    "beach": {
+      "tags": {
+        "natural": "beach"
+      }
+    },
+    "building": {
+      "tags": {
+        "building": true
+      }
+    },
+    "grass": {
+      "tags": {
+        "landuse": "grass",
+        "natural": "wood"
+      }
+    },
+    "park": {
+      "tags": {
+        "amenity": "hospital",
+        "boundary": "protected_area",
+        "landuse": "military",
+        "leisure": "nature_reserve",
+        "natural": "grassland",
+        "place": "square"
+      }
+    },
+    "pedestrian": {
+      "tags": {
+        "area:highway": "pedestrian"
+      }
+    },
+    "perimeter": {},
+    "streets": {
+      "width": {
+        "motorway": 12,
+        "primary": 11,
+        "residential": 8,
+        "secondary": 10,
+        "tertiary": 9,
+        "trunk": 12
+      }
+    },
+    "water": {
+      "tags": {
+        "natural": "water"
+      }
+    },
+    "wetland": {
+      "tags": {
+        "natural": "scrub"
+      }
+    }
+  },
+  "radius": null,
+  "style": {
+    "beach": {
+      "ec": "#EBD499",
+      "fc": "#F2E3BC",
+      "hatch": "ooo...",
+      "lw": 0,
+      "zorder": 2
+    },
+    "building": {
+      "ec": "#E7A89C",
+      "fc": "#E7A89C",
+      "lw": 0,
+      "zorder": 0
+    },
+    "grass": {
+      "ec": "#64a38d",
+      "fc": "#72C07A",
+      "hatch": "ooo...",
+      "lw": 0,
+      "zorder": 1
+    },
+    "park": {
+      "ec": "#8bc49e",
+      "fc": "#AAD897",
+      "hatch": "ooo...",
+      "lw": 0,
+      "zorder": 1
+    },
+    "pedestrian": {
+      "ec": "#638475",
+      "fc": "#7BC950",
+      "hatch": "ooo...",
+      "lw": 0,
+      "zorder": 2
+    },
+    "perimeter": {
+      "ec": "#0F110C",
+      "fill": false,
+      "lw": 0
+    },
+    "streets": {
+      "ec": "#706f6f",
+      "fc": "#898989",
+      "hatch": "ooo...",
+      "lw": 0,
+      "zorder": 3
+    },
+    "water": {
+      "ec": "#59adcf",
+      "fc": "#6CCFF6",
+      "hatch": "ooo...",
+      "lw": 0,
+      "zorder": 2
+    },
+    "wetland": {
+      "ec": "#AEB441",
+      "fc": "#D2D68D",
+      "hatch": "ooo...",
+      "lw": 0,
+      "zorder": 3
+    }
+  }
+}
