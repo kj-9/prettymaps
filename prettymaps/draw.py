@@ -450,7 +450,8 @@ def gdf_to_shapely(
     # Project gdf
     try:
         gdf = ox.project_gdf(gdf)
-    finally:
+    except ValueError:
+        print("ox.project_gdf failed, continue execution...")
         pass
 
     if layer in ["streets", "railway", "waterway"]:
@@ -919,6 +920,7 @@ def plot(
 
     # 8. Draw layers
     if mode == "plotter":
+        raise NotImplementedError()
         # 8.1. Draw layers in plotter (vsketch) mode
         """
         class Sketch(vsketch.SketchClass):
