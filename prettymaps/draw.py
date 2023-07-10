@@ -450,7 +450,7 @@ def gdf_to_shapely(
     # Project gdf
     try:
         gdf = ox.project_gdf(gdf)
-    except:
+    finally:
         pass
 
     if layer in ["streets", "railway", "waterway"]:
