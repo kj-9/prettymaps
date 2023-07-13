@@ -3,7 +3,7 @@ from pathlib import Path
 from setuptools import setup, find_packages
 
 parent_dir = Path(__file__).resolve().parent
-presets_dir = os.path.abspath(os.path.join(os.path.pardir, 'presets'))
+presets_dir = os.path.abspath(os.path.join(os.path.pardir, "presets"))
 
 setup(
     name="prettymaps",
@@ -15,13 +15,12 @@ setup(
     author="Marcelo Prates",
     author_email="marceloorp@gmail.com",
     license="MIT License",
-    packages=find_packages(
-        exclude=("assets", "notebooks", "prints", "script")),
-    install_requires=parent_dir.joinpath(
-        "requirements.txt").read_text().splitlines(),
+    packages=find_packages(exclude=("assets", "notebooks", "prints", "script")),
+    install_requires=["osmnx==1.2.2", "Shapely>=1.8,<2.0", "pyyaml==6.0.0"],
+    extras_require={"test": ["pytest", "pytest-regressions[image]", "pre-commit"]},
     classifiers=[
         "Intended Audience :: Science/Research",
     ],
-    package_dir={'prettymaps': 'prettymaps'},
-    package_data={'prettymaps': ['presets/*.json']},
+    package_dir={"prettymaps": "prettymaps"},
+    package_data={"prettymaps": ["presets/*.json"]},
 )
