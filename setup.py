@@ -15,6 +15,7 @@ setup(
     author="Marcelo Prates",
     author_email="marceloorp@gmail.com",
     license="MIT License",
+    python_requires='>=3.10',
     packages=find_packages(exclude=("assets", "notebooks", "prints", "script")),
     install_requires=["osmnx==1.2.2", "Shapely>=1.8,<2.0", "pyyaml==6.0.0"],
     extras_require={"test": ["pytest", "pytest-regressions[image]", "pre-commit"]},
