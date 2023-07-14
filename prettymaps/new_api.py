@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, NewType, Tuple, TypeAlias, Union
+from typing import NewType, TypeAlias
 
 import geopandas as gp
 import osmnx as ox
@@ -39,7 +39,7 @@ class Tuplable(ABC):
 
 
 # types
-Query: TypeAlias = Union[str, Tuple[float, float], gp.GeoDataFrame]
+Query: TypeAlias = str | tuple[float, float] | gp.GeoDataFrame
 """Your query.
 Example:
     - "Porto Alegre"
@@ -48,9 +48,9 @@ Example:
 """
 
 # maybe dataclass is more suitable
-GeoDataFrames = NewType("GeoDataFrames", Dict[str, gp.GeoDataFrame])
-Layers = NewType("Layers", Dict[str, dict])  # osm layer for query
-Style = NewType("Style", Dict[str, dict])  # style for layer
+GeoDataFrames = NewType("GeoDataFrames", dict[str, gp.GeoDataFrame])
+Layers = NewType("Layers", dict[str, dict])  # osm layer for query
+Style = NewType("Style", dict[str, dict])  # style for layer
 
 
 @dataclass
@@ -72,7 +72,7 @@ def presets_directory() -> Path:
 
 def read_preset(name: str) -> Preset:
     """Read a preset from the presets folder (prettymaps/presets/)."""
-    with open(presets_directory() / f"{name}.json", "r") as f:
+    with open(presets_directory() / f"{name}.json") as f:
         # Load params from JSON file
         preset_dict = json.load(f)
 
@@ -200,7 +200,7 @@ class PlotArg(Tuplable):
     layers: Layers
     style: Style
     ax: plt.Axes | None = None
-    figsize: Tuple[float, float] = (12, 12)
+    figsize: tuple[float, float] = (12, 12)
     credit: None = None
     show: bool = True
     save_as: str | None = None
