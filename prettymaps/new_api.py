@@ -33,7 +33,7 @@ class Tuplable(ABC):
     def to_tuple(self) -> tuple:
         """Serialize instance to tuple. useful for destruction assignment of attributes.
 
-        Implement like: `return (self.a, self.b, ...)`.
+        Implement like: `return (self.a, self.b, ...)`, elements ordered by definition in class
         """
         pass
 
