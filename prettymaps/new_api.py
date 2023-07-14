@@ -140,11 +140,11 @@ def get_gdfs(get_arg: GetArg) -> GeoDataFrames:
 class TransformArg(Tuplable):
     """Dataclass represents arguments for get_gdfs.
 
-    x (float, optional: x-axis translation. Defaults to 0.
-    y (float, optional): y-axis translation. Defaults to 0.
-    scale_x (float, optional): x-axis scale. Defaults to 1.
-    scale_y (float, optional): y-axis scale. Defaults to 1.
-    rotation (float, optional): rotation angle (in radians). Defaults to 0.
+    x: x-axis translation. Defaults to 0.
+    y: y-axis translation. Defaults to 0.
+    scale_x: x-axis scale. Defaults to 1.
+    scale_y: y-axis scale. Defaults to 1.
+    rotation: rotation angle (in radians). Defaults to 0.
     """
 
     x: float = 0
@@ -195,14 +195,7 @@ def transform_gdfs(gdfs: GeoDataFrames, transform_arg: TransformArg) -> GeoDataF
 
 @dataclass
 class PlotArg(Tuplable):
-    """Dataclass represents arguments for plot_gdfs.
-
-    x (float, optional: x-axis translation. Defaults to 0.
-    y (float, optional): y-axis translation. Defaults to 0.
-    scale_x (float, optional): x-axis scale. Defaults to 1.
-    scale_y (float, optional): y-axis scale. Defaults to 1.
-    rotation (float, optional): rotation angle (in radians). Defaults to 0.
-    """
+    """Dataclass represents arguments for plot_gdfs."""
 
     layers: Layers
     style: Style
