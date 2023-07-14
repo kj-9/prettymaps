@@ -25,7 +25,6 @@ jobs:
         pip install -e '.[test]'
     - name: Run tests
       if: hashFiles('setup.py')
-      run: |
-        pytest
+      run: make test
     - name: Run lint and format
-      run: pre-commit run --all-files --show-diff-on-failure
+      run: make pre-commit
