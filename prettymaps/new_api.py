@@ -123,9 +123,7 @@ class TransformArg:
     rotation: float = 0
 
 
-def transform_gdfs(
-    gdfs: GeoDataFrames, transform_arg: TransformArg = TransformArg()
-) -> GeoDataFrames:
+def transform_gdfs(gdfs: GeoDataFrames, transform_arg: TransformArg) -> GeoDataFrames:
     """Apply geometric transformations to dictionary of GeoDataFrames."""
     # if just default arg, do nothing
     if transform_arg == TransformArg():
@@ -144,7 +142,7 @@ def transform_gdfs(
     )
 
     # desturct arg
-    x, y, scale_x, scale_y, rotation = asdict(transform_arg)
+    x, y, scale_x, scale_y, rotation = asdict(transform_arg).values()
 
     # Translation, scale & rotation
     collection = shapely.affinity.translate(collection, x, y)
@@ -160,18 +158,31 @@ def transform_gdfs(
     return gdfs
 
 
-def plot_gdfs(
-    gdfs: GeoDataFrames,
-    layers: Layers,
-    style: Style,
-    ax=None,
-    figsize=(12, 12),
-    credit={},
-    show=True,
-    save_as=None,
-) -> Plot:
+@dataclass
+class PlotArg:
+    """Dataclass represents arguments for plot_gdfs.
+
+    x (float, optional: x-axis translation. Defaults to 0.
+    y (float, optional): y-axis translation. Defaults to 0.
+    scale_x (float, optional): x-axis scale. Defaults to 1.
+    scale_y (float, optional): y-axis scale. Defaults to 1.
+    rotation (float, optional): rotation angle (in radians). Defaults to 0.
+    """
+
+    layers: Layers
+    style: Style
+    ax: plt.Axes | None = None
+    figsize: Tuple[float, float] = (12, 12)
+    credit: Dict[str, dict] | None = None
+    show: bool = True
+    save_as: str | None = None
+
+
+def plot_gdfs(gdfs: GeoDataFrames, plot_arg: PlotArg) -> Plot:
     """Plot gdfs."""
     # returnは色々ありうる。Plotデータクラス、PILオブジェクト。副作用として画像保存させるか、それは別メソッドにするか。
+
+    layers, style, ax, figsize, credit, show, save_as = asdict(plot_arg).values()
 
     # 7. Create background GeoDataFrame and get (x,y) bounds
     background, xmin, ymin, xmax, ymax, dx, dy = create_background(gdfs, style)
@@ -206,7 +217,7 @@ def plot_gdfs(
         )
 
     # 10. Draw credit message
-    if credit is not False:
+    if credit is not None:
         draw_text(credit, background)
 
     # 11. Ajust figure and create PIL Image

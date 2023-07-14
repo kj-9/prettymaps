@@ -2,7 +2,7 @@
 # see also: https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 
 [tool.ruff]
-select = ["E", "F", "I", "D"]
+select = ["E", "F", "I", "D", "W", "PL", "B"]
 
 # Never enforce `E501` (line length violations).
 ignore = ["E501"]
