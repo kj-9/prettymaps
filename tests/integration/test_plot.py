@@ -7,7 +7,15 @@ see also: https://pytest-regressions.readthedocs.io/en/latest/index.html.
 """
 
 from prettymaps import plot
-from prettymaps.new_api import GetArg, get_gdfs, plot_gdfs, read_preset, transform_gdfs
+from prettymaps.new_api import (
+    GetArg,
+    PlotArg,
+    TransformArg,
+    get_gdfs,
+    plot_gdfs,
+    read_preset,
+    transform_gdfs,
+)
 
 # plot parameters
 DIFF_THRESHOLD = 3  # % of difference between images
@@ -42,11 +50,12 @@ def test_regression_plot_from_new_and_from_old(image_regression, original_datadi
     )
 
     # do nothing
-    gdfs_transformed = transform_gdfs(gdfs)
+    gdfs_transformed = transform_gdfs(gdfs, TransformArg())
     assert gdfs_transformed == gdfs
 
     plot_gdfs(
-        gdfs_transformed, layers=preset.layers, style=preset.style, save_as=str(image)
+        gdfs_transformed,
+        plot_arg=PlotArg(layers=preset.layers, style=preset.style, save_as=str(image)),
     )
 
     image_regression.check(

@@ -1,7 +1,12 @@
+"""Test for arg types."""
+
+from dataclasses import asdict
+
 from prettymaps.new_api import GetArg
-from dataclasses  import asdict
+
 
 def test_get_arg():
+    """Unit test for GetArg."""
     get_arg = GetArg("test-query", {})
     query, layers, radius, dilate, rotation, circle = asdict(get_arg).values()
 
