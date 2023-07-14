@@ -1,3 +1,5 @@
+"""Tests for presets."""
+
 from dataclasses import asdict
 
 from prettymaps import presets
@@ -7,10 +9,12 @@ from prettymaps.new_api import read_preset as new_read_preset
 
 
 def test_presets():
+    """Unit tests for presets."""
     assert len(presets()) == 7
 
 
 def test_presets_new_api():
+    """Rgression test for presets between new and old api."""
     for json_file in presets_directory().iterdir():
         preset_name = json_file.name.removesuffix(".json")
 

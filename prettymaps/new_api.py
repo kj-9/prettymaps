@@ -1,3 +1,6 @@
+"""Experimental new api for prettymaps."""
+
+
 import json
 from copy import deepcopy
 from dataclasses import asdict, dataclass
@@ -43,14 +46,12 @@ class Preset:
 
 
 def presets_directory() -> Path:
+    """Returns presets directory."""
     return Path(__file__).resolve().parent / "presets"
 
 
 def read_preset(name: str) -> Preset:
-    """
-    Read a preset from the presets folder (prettymaps/presets/)
-    """
-
+    """Read a preset from the presets folder (prettymaps/presets/)."""
     with open(presets_directory() / f"{name}.json", "r") as f:
         # Load params from JSON file
         preset_dict = json.load(f)
@@ -71,8 +72,7 @@ class GetArg:
 
 
 def get_gdfs(get_arg: GetArg) -> GeoDataFrames:
-    """Fetch GeoDataFrames given query and a dictionary of layers"""
-
+    """Fetch GeoDataFrames given query and a dictionary of layers."""
     query, layers, radius, dilate, rotation, circle = asdict(get_arg).values()
 
     # override layers
@@ -107,12 +107,14 @@ def get_gdfs(get_arg: GetArg) -> GeoDataFrames:
 
 @dataclass
 class TransformArg:
-    """Dataclass represents arguments for get_gdfs
+    """Dataclass represents arguments for get_gdfs.
+
     x (float, optional: x-axis translation. Defaults to 0.
     y (float, optional): y-axis translation. Defaults to 0.
     scale_x (float, optional): x-axis scale. Defaults to 1.
     scale_y (float, optional): y-axis scale. Defaults to 1.
-    rotation (float, optional): rotation angle (in radians). Defaults to 0."""
+    rotation (float, optional): rotation angle (in radians). Defaults to 0.
+    """
 
     x: float = 0
     y: float = 0
@@ -124,8 +126,7 @@ class TransformArg:
 def transform_gdfs(
     gdfs: GeoDataFrames, transform_arg: TransformArg = TransformArg()
 ) -> GeoDataFrames:
-    """Apply geometric transformations to dictionary of GeoDataFrames"""
-
+    """Apply geometric transformations to dictionary of GeoDataFrames."""
     # if just default arg, do nothing
     if transform_arg == TransformArg():
         return gdfs
@@ -168,11 +169,8 @@ def plot_gdfs(
     credit={},
     show=True,
     save_as=None,
-):
-    """_summary_
-    Returns:
-        _type_: _description_
-    """
+) -> Plot:
+    """Plot gdfs."""
     # returnは色々ありうる。Plotデータクラス、PILオブジェクト。副作用として画像保存させるか、それは別メソッドにするか。
 
     # 7. Create background GeoDataFrame and get (x,y) bounds

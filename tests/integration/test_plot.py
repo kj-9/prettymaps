@@ -1,8 +1,9 @@
-"""
-needs pytest-regression package.
+"""integration / regression tests for plotting.
+
+this test needs pytest-regression package.
 run by `pythom -m test tests/`
 force regen image by `pythom -m test tests/ --force-regen`
-see also: https://pytest-regressions.readthedocs.io/en/latest/index.html
+see also: https://pytest-regressions.readthedocs.io/en/latest/index.html.
 """
 
 from prettymaps import plot
@@ -20,10 +21,7 @@ REG_IMAGE = "plot_from_old_api"
 
 
 def test_regression_plot_from_old(image_regression, original_datadir):
-    """
-    tests old plot api: prettymaps.plot is generating same plot as before.
-    """
-
+    """Tests old plot api: prettymaps.plot is generating same plot as before."""
     image = original_datadir / "tmp-tijuca-300.png"
     print(f"{str(image)=}")
     plot(QUERY, radius=RADIOUS, save_as=str(image), preset=PRESET)
@@ -33,6 +31,7 @@ def test_regression_plot_from_old(image_regression, original_datadir):
 
 
 def test_regression_plot_from_new_and_from_old(image_regression, original_datadir):
+    """Tests regression of plot from new api to plot from old api."""
     preset = read_preset(PRESET)
 
     image = original_datadir / "tmp-tijuca-300-new-api.png"
