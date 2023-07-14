@@ -6,3 +6,6 @@ dist/
 .venv
 build
 *cache*
+
+# for test
+tmp*.png
