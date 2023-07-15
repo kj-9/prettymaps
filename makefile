@@ -20,3 +20,9 @@ pre-commit:
 
 clean:
 	rm -rf *cache
+
+build:
+	python -m pip install --upgrade pip setuptools wheel
+	python -m pip install build twine
+	python -m pip list
+	python -m build --outdir dist/ .
