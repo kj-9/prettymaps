@@ -11,11 +11,12 @@ import geopandas as gp
 import osmnx as ox
 import shapely.affinity
 import shapely.ops
+from matplotlib import pyplot as plt
 from shapely.geometry import (
     GeometryCollection,
 )
 
-from .draw import Plot, PolygonPatch, create_background, draw_text, plot_gdf, plt
+from .draw import Plot, PolygonPatch, create_background, draw_text, plot_gdf
 from .fetch import get_gdf, get_perimeter
 
 
