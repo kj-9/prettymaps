@@ -7,16 +7,18 @@ see also: https://pytest-regressions.readthedocs.io/en/latest/index.html.
 """
 
 from prettymaps import plot
-from prettymaps.new_api import (
+from prettymaps.new_api.get import (
     Perimeter,
-    PlotArg,
     Shape,
     TransformArg,
     get_gdfs,
-    plot_gdfs,
-    read_preset,
     transform_gdfs,
 )
+from prettymaps.new_api.plot import (
+    PlotArg,
+    plot_gdfs,
+)
+from prettymaps.new_api.types import read_preset
 
 # plot parameters
 DIFF_THRESHOLD = 3  # % of difference between images

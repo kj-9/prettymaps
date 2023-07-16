@@ -4,8 +4,8 @@ from dataclasses import asdict
 
 from prettymaps import presets
 from prettymaps.draw import read_preset
-from prettymaps.new_api import presets_directory
-from prettymaps.new_api import read_preset as new_read_preset
+from prettymaps.new_api.types import presets_directory
+from prettymaps.new_api.types import read_preset as new_read_preset
 
 NUM_PRESETS = 7
 

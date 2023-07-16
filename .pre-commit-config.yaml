@@ -1,7 +1,6 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
-files: '^prettymaps/|^tests/'
-exclude: '^prettymaps/__init__.py$|^prettymaps/draw.py$|^prettymaps/fetch.py$|^prettymaps/presets/' # excludes old files
+files: '^prettymaps/new_api/|^tests/'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0

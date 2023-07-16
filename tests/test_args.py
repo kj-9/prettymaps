@@ -1,6 +1,7 @@
 """Test for arg types."""
 
-from prettymaps.new_api import PlotArg, TransformArg
+from prettymaps.new_api.get import TransformArg
+from prettymaps.new_api.plot import PlotArg
 
 
 def test_transform_arg():
