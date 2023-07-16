@@ -284,14 +284,12 @@ def plot_gdf(
     layer: str,
     gdf: gp.GeoDataFrame,
     ax: matplotlib.axes.Axes,
-    mode: str = "matplotlib",
-    # vsk: Optional[vsketch.SketchClass] = None,
-    vsk=None,
     palette: list[str] | None = None,
     width: dict | float | None = None,
     union: bool = False,
     dilate_points: float | None = None,
     dilate_lines: float | None = None,
+    hatch_c=None,
     **kwargs,
 ) -> None:
     """Plot a layer.
@@ -300,8 +298,6 @@ def plot_gdf(
         layer (str): layer name
         gdf (gp.GeoDataFrame): GeoDataFrame
         ax (matplotlib.axes.Axes): matplotlib axis object
-        mode (str): drawing mode. Options: 'matplotlib', 'vsketch'. Defaults to 'matplotlib'
-        vsk (Optional[vsketch.SketchClass]): Vsketch object. Mandatory if mode == 'plotter'
         palette (Optional[List[str]], optional): Color palette. Defaults to None.
         width (Optional[Union[dict, float]], optional): Street widths. Either a dictionary or a float. Defaults to None.
         union (bool, optional): Whether to join geometries. Defaults to False.
@@ -311,9 +307,6 @@ def plot_gdf(
     Raises:
         Exception: _description_
     """
-    # Get hatch and hatch_c parameter
-    hatch_c = kwargs.pop("hatch_c") if "hatch_c" in kwargs else None
-
     # Convert GDF to shapely geometries
     geometries = gdf_to_shapely(
         layer, gdf, width, point_size=dilate_points, line_width=dilate_lines
@@ -329,45 +322,43 @@ def plot_gdf(
 
     # Plot shapes
     for shape in geometries:
-        if mode == "matplotlib":
-            if type(shape) in [Polygon, MultiPolygon]:
-                # Plot main shape (without silhouette)
-                ax.add_patch(
-                    PolygonPatch(
-                        shape,
-                        lw=0,
-                        ec=hatch_c
-                        if hatch_c
-                        else kwargs["ec"]
-                        if "ec" in kwargs
-                        else None,
-                        fc=kwargs["fc"]
-                        if "fc" in kwargs
-                        else np.random.choice(palette)
-                        if palette
-                        else None,
-                        **{
-                            k: v
-                            for k, v in kwargs.items()
-                            if k not in ["lw", "ec", "fc"]
-                        },
-                    ),
+        if type(shape) in [Polygon, MultiPolygon]:
+            # Plot main shape (without silhouette)
+            ax.add_patch(
+                PolygonPatch(
+                    shape,
+                    lw=0,
+                    ec=hatch_c if hatch_c else kwargs["ec"] if "ec" in kwargs else None,
+                    fc=kwargs["fc"]
+                    if "fc" in kwargs
+                    else np.random.choice(palette)
+                    if palette
+                    else None,
+                    **{k: v for k, v in kwargs.items() if k not in ["lw", "ec", "fc"]},
+                ),
+            )
+            # Plot just silhouette
+            ax.add_patch(
+                PolygonPatch(
+                    shape,
+                    fill=False,
+                    **{k: v for k, v in kwargs.items() if k not in ["hatch", "fill"]},
                 )
-                # Plot just silhouette
-                ax.add_patch(
-                    PolygonPatch(
-                        shape,
-                        fill=False,
-                        **{
-                            k: v
-                            for k, v in kwargs.items()
-                            if k not in ["hatch", "fill"]
-                        },
-                    )
-                )
-            elif type(shape) == LineString:
+            )
+        elif type(shape) == LineString:
+            ax.plot(
+                *shape.xy,
+                c=kwargs["ec"] if "ec" in kwargs else None,
+                **{
+                    k: v
+                    for k, v in kwargs.items()
+                    if k in ["lw", "lt", "dashes", "zorder"]
+                },
+            )
+        elif type(shape) == MultiLineString:
+            for c in shape.geoms:
                 ax.plot(
-                    *shape.xy,
+                    *c.xy,
                     c=kwargs["ec"] if "ec" in kwargs else None,
                     **{
                         k: v
@@ -375,39 +366,6 @@ def plot_gdf(
                         if k in ["lw", "lt", "dashes", "zorder"]
                     },
                 )
-            elif type(shape) == MultiLineString:
-                for c in shape.geoms:
-                    ax.plot(
-                        *c.xy,
-                        c=kwargs["ec"] if "ec" in kwargs else None,
-                        **{
-                            k: v
-                            for k, v in kwargs.items()
-                            if k in ["lw", "lt", "dashes", "zorder"]
-                        },
-                    )
-        elif mode == "plotter":
-            if ("draw" not in kwargs) or kwargs["draw"]:
-                # Set stroke
-                if "stroke" in kwargs:
-                    vsk.stroke(kwargs["stroke"])
-                else:
-                    vsk.stroke(1)
-
-                # Set pen width
-                if "penWidth" in kwargs:
-                    vsk.penWidth(kwargs["penWidth"])
-                else:
-                    vsk.penWidth(0.3)
-
-                if "fill" in kwargs:
-                    vsk.fill(kwargs["fill"])
-                else:
-                    vsk.noFill()
-
-                vsk.geometry(shape)
-        else:
-            raise Exception(f"Unknown mode {mode}")
 
 
 def plot_gdfs(gdfs: GeoDataFrames, plot_arg: PlotArg) -> None:
