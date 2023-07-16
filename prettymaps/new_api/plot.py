@@ -1,24 +1,30 @@
 """Experimental new api for prettymaps."""
 
-from typing import NamedTuple
-from copy import deepcopy
 import warnings
-from matplotlib import pyplot as plt
-import shapely.ops
+from collections.abc import Iterable
+from copy import deepcopy
+from typing import NamedTuple
+
+import geopandas as gp
+import matplotlib
 import numpy as np
 import osmnx as ox
-import geopandas as gp
 import shapely.affinity
+import shapely.ops
 from matplotlib import pyplot as plt
 from matplotlib.patches import Path, PathPatch
-from typing import Optional, Union, Tuple, List, Dict, Iterable
+from shapely.geometry import (
+    GeometryCollection,
+    LineString,
+    MultiLineString,
+    MultiPolygon,
+    Point,
+    Polygon,
+    box,
+)
 from shapely.geometry.base import BaseGeometry
-from shapely.geometry import  Point, LineString, MultiLineString, Polygon, MultiPolygon, box, GeometryCollection
-import matplotlib
 
 from .types import GeoDataFrames, Layers, Style
-
-
 
 
 class PlotArg(NamedTuple):
@@ -34,11 +40,9 @@ class PlotArg(NamedTuple):
 
 
 def create_background(
-    gdfs: Dict[str, gp.GeoDataFrame],
-    style: Dict[str, dict]
-) -> Tuple[BaseGeometry, float, float, float, float, float, float]:
-    """
-    Create a background layer given a collection of GeoDataFrames
+    gdfs: dict[str, gp.GeoDataFrame], style: dict[str, dict]
+) -> tuple[BaseGeometry, float, float, float, float, float, float]:
+    """Create a background layer given a collection of GeoDataFrames.
 
     Args:
         gdfs (Dict[str, gp.GeoDataFrame]): Dictionary of GeoDataFrames
@@ -47,21 +51,21 @@ def create_background(
     Returns:
         Tuple[BaseGeometry, float, float, float, float, float, float]: background geometry, bounds, width and height
     """
-    
     # Create background
     background_pad = 1.1
     if "background" in style and "pad" in style["background"]:
         background_pad = style["background"].pop("pad")
 
     background = shapely.affinity.scale(
-        box(*
-            shapely.ops.unary_union(ox.project_gdf(gdfs["perimeter"]).geometry).bounds),
+        box(
+            *shapely.ops.unary_union(ox.project_gdf(gdfs["perimeter"]).geometry).bounds
+        ),
         background_pad,
         background_pad,
     )
 
     if "background" in style and "dilate" in style["background"]:
-        background = background.buffer(style['background'].pop("dilate"))
+        background = background.buffer(style["background"].pop("dilate"))
 
     # Get bounds
     xmin, ymin, xmax, ymax = background.bounds
@@ -70,12 +74,8 @@ def create_background(
     return background, xmin, ymin, xmax, ymax, dx, dy
 
 
-def override_params(
-        default_dict: dict,
-        new_dict: dict
-) -> dict:
-    """
-    Override parameters in 'default_dict' with additional parameters from 'new_dict'
+def override_params(default_dict: dict, new_dict: dict) -> dict:
+    """Override parameters in 'default_dict' with additional parameters from 'new_dict'.
 
     Args:
         default_dict (dict): Default dict to be overriden with 'new_dict' parameters
@@ -84,14 +84,12 @@ def override_params(
     Returns:
         dict: default_dict overriden with new_dict parameters
     """
-
     final_dict = deepcopy(default_dict)
 
     for key in new_dict.keys():
         if type(new_dict[key]) == dict:
             if key in final_dict:
-                final_dict[key] = override_params(
-                    final_dict[key], new_dict[key])
+                final_dict[key] = override_params(final_dict[key], new_dict[key])
             else:
                 final_dict[key] = new_dict[key]
         else:
@@ -99,13 +97,11 @@ def override_params(
 
     return final_dict
 
-def draw_text(
-    params: Dict[str, dict],
-    background: BaseGeometry
-) -> None:
-    """
-    Draw text with content and matplotlib style parameters specified by 'params' dictionary.
-    params['text'] should contain the message to be drawn
+
+def draw_text(params: dict[str, dict], background: BaseGeometry) -> None:
+    """Draw text with content and matplotlib style parameters specified by 'params' dictionary.
+
+    params['text'] should contain the message to be drawn.
 
     Args:
         params (Dict[str, dict]): matplotlib style parameters for drawing text. params['text'] should contain the message to be drawn.
@@ -114,19 +110,22 @@ def draw_text(
     # Override default osm_credit dict with provided parameters
     params = override_params(
         dict(
-            text="\n".join([
-                "data © OpenStreetMap contributors",
-                "github.com/marceloprates/prettymaps"
-            ]),
-            x=0, y=1,
-            horizontalalignment='left',
-            verticalalignment='top',
-            bbox=dict(boxstyle='square', fc='#fff', ec='#000'),
-            fontfamily='Ubuntu Mono'
+            text="\n".join(
+                [
+                    "data © OpenStreetMap contributors",
+                    "github.com/marceloprates/prettymaps",
+                ]
+            ),
+            x=0,
+            y=1,
+            horizontalalignment="left",
+            verticalalignment="top",
+            bbox=dict(boxstyle="square", fc="#fff", ec="#000"),
+            fontfamily="Ubuntu Mono",
         ),
-        params
+        params,
     )
-    x, y, text = [params.pop(k) for k in ['x', 'y', 'text']]
+    x, y, text = (params.pop(k) for k in ["x", "y", "text"])
 
     # Get background bounds
     xmin, ymin, xmax, ymax = background.bounds
@@ -134,17 +133,11 @@ def draw_text(
     x = np.interp([x], [0, 1], [xmin, xmax])[0]
     y = np.interp([y], [0, 1], [ymin, ymax])[0]
 
-    plt.text(
-        x, y, text,
-        **params
-    )
+    plt.text(x, y, text, **params)
 
 
-def PolygonPatch(
-    shape: BaseGeometry,
-    **kwargs
-) -> PathPatch:
-    """_summary_
+def PolygonPatch(shape: BaseGeometry, **kwargs) -> PathPatch:
+    """_summary_.
 
     Args:
         shape (BaseGeometry): Shapely geometry
@@ -176,14 +169,10 @@ def PolygonPatch(
     )
 
 
+def graph_to_shapely(gdf: gp.GeoDataFrame, width: float = 1.0) -> BaseGeometry:
+    """Given a GeoDataFrame containing a graph (street newtork),.
 
-def graph_to_shapely(
-    gdf: gp.GeoDataFrame,
-    width: float = 1.
-) -> BaseGeometry:
-    """
-    Given a GeoDataFrame containing a graph (street newtork),
-    convert them to shapely geometries by applying dilation given by 'width'
+    convert them to shapely geometries by applying dilation given by 'width'.
 
     Args:
         gdf (gp.GeoDataFrame): input GeoDataFrame containing graph (street network) geometries
@@ -205,16 +194,14 @@ def graph_to_shapely(
             return np.nan
 
     # Annotate GeoDataFrame with the width for each highway type
-    gdf["width"] = gdf.highway.map(
-        highway_to_width) if type(width) == dict else width
+    gdf["width"] = gdf.highway.map(highway_to_width) if type(width) == dict else width
 
     # Remove rows with inexistent width
     gdf.drop(gdf[gdf.width.isna()].index, inplace=True)
 
     with warnings.catch_warnings():
         # Supress shapely.errors.ShapelyDeprecationWarning
-        warnings.simplefilter(
-            "ignore", shapely.errors.ShapelyDeprecationWarning)
+        warnings.simplefilter("ignore", shapely.errors.ShapelyDeprecationWarning)
         if not all(gdf.width.isna()):
             # Dilate geometries based on their width
             gdf.geometry.update(
@@ -224,14 +211,12 @@ def graph_to_shapely(
     return shapely.ops.unary_union(gdf.geometry)
 
 
-
 def geometries_to_shapely(
     gdf: gp.GeoDataFrame,
-    point_size: Optional[float] = None,
-    line_width: Optional[float] = None
+    point_size: float | None = None,
+    line_width: float | None = None,
 ) -> GeometryCollection:
-    """
-    Convert geometries in GeoDataFrame to shapely format
+    """Convert geometries in GeoDataFrame to shapely format.
 
     Args:
         gdf (gp.GeoDataFrame): Input GeoDataFrame
@@ -241,7 +226,6 @@ def geometries_to_shapely(
     Returns:
         GeometryCollection: Shapely geometries computed from GeoDataFrame geometries
     """
-
     geoms = gdf.geometry.tolist()
     collections = [x for x in geoms if type(x) == GeometryCollection]
     points = [x for x in geoms if type(x) == Point] + [
@@ -259,25 +243,22 @@ def geometries_to_shapely(
 
     # Convert points into circles with radius "point_size"
     if point_size:
-        points = [x.buffer(point_size)
-                  for x in points] if point_size > 0 else []
+        points = [x.buffer(point_size) for x in points] if point_size > 0 else []
     if line_width:
         lines = [x.buffer(line_width) for x in lines] if line_width > 0 else []
 
     return GeometryCollection(list(points) + list(lines) + list(polys))
 
 
-
 def gdf_to_shapely(
-        layer: str,
-        gdf: gp.GeoDataFrame,
-        width: Optional[Union[dict, float]] = None,
-        point_size: Optional[float] = None,
-        line_width: Optional[float] = None,
-        **kwargs
+    layer: str,
+    gdf: gp.GeoDataFrame,
+    width: dict | float | None = None,
+    point_size: float | None = None,
+    line_width: float | None = None,
+    **kwargs,
 ) -> GeometryCollection:
-    """
-    Convert a dict of GeoDataFrames to a dict of shapely geometries
+    """Convert a dict of GeoDataFrames to a dict of shapely geometries.
 
     Args:
         layer (str): Layer name
@@ -289,7 +270,6 @@ def gdf_to_shapely(
     Returns:
         GeometryCollection: Output GeoDataFrame
     """
-
     # Project gdf
     try:
         gdf = ox.project_gdf(gdf)
@@ -310,18 +290,17 @@ def plot_gdf(
     layer: str,
     gdf: gp.GeoDataFrame,
     ax: matplotlib.axes.Axes,
-    mode: str = 'matplotlib',
-    #vsk: Optional[vsketch.SketchClass] = None,
+    mode: str = "matplotlib",
+    # vsk: Optional[vsketch.SketchClass] = None,
     vsk=None,
-    palette: Optional[List[str]] = None,
-    width: Optional[Union[dict, float]] = None,
+    palette: list[str] | None = None,
+    width: dict | float | None = None,
     union: bool = False,
-    dilate_points: Optional[float] = None,
-    dilate_lines: Optional[float] = None,
+    dilate_points: float | None = None,
+    dilate_lines: float | None = None,
     **kwargs,
 ) -> None:
-    """
-    Plot a layer
+    """Plot a layer.
 
     Args:
         layer (str): layer name
@@ -338,7 +317,6 @@ def plot_gdf(
     Raises:
         Exception: _description_
     """
-
     # Get hatch and hatch_c parameter
     hatch_c = kwargs.pop("hatch_c") if "hatch_c" in kwargs else None
 
@@ -346,8 +324,7 @@ def plot_gdf(
     geometries = gdf_to_shapely(
         layer, gdf, width, point_size=dilate_points, line_width=dilate_lines
     )
-    geometries = geometries.geoms if isinstance(
-        geometries, Iterable) else [geometries]
+    geometries = geometries.geoms if isinstance(geometries, Iterable) else [geometries]
 
     # Unite geometries
     if union:
@@ -417,7 +394,6 @@ def plot_gdf(
                     )
         elif mode == "plotter":
             if ("draw" not in kwargs) or kwargs["draw"]:
-
                 # Set stroke
                 if "stroke" in kwargs:
                     vsk.stroke(kwargs["stroke"])
@@ -440,7 +416,6 @@ def plot_gdf(
             raise Exception(f"Unknown mode {mode}")
 
 
-
 def plot_gdfs(gdfs: GeoDataFrames, plot_arg: PlotArg) -> None:
     """Plot gdfs."""
     # returnは色々ありうる。Plotデータクラス、PILオブジェクト。副作用として画像保存させるか、それは別メソッドにするか。
@@ -452,7 +427,7 @@ def plot_gdfs(gdfs: GeoDataFrames, plot_arg: PlotArg) -> None:
 
     # 2. Init matplotlib figure
     if ax is None:
-        fig = plt.figure(figsize=figsize)
+        plt.figure(figsize=figsize)
         ax = plt.subplot(111, aspect="equal")
 
     # 8.2. Draw layers in matplotlib mode
@@ -495,4 +470,3 @@ def plot_gdfs(gdfs: GeoDataFrames, plot_arg: PlotArg) -> None:
         plt.savefig(save_as)
     if not show:
         plt.close()
-
