@@ -1,12 +1,10 @@
 """Experimental new api for prettymaps."""
 
 import json
-import re
 from abc import ABC, abstractmethod
-from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NewType, TypeAlias
+from typing import Literal, NamedTuple, NewType, TypeAlias
 
 import geopandas as gp
 import numpy as np
@@ -88,47 +86,128 @@ def read_preset(name: str) -> Preset:
     return Preset(**preset_dict)
 
 
+class Shape(NamedTuple):
+    """Shape parameters for creating perimeter from given point."""
+
+    type: Literal["circle", "square"]
+    radius: float = 1000  # defaults to 1km.
+
+
 @dataclass
-class GetArg(Tuplable):
-    """Dataclass represents arguments for get_gdfs."""
+class Perimeter:
+    """Dataclass of perimeter geodataframe for input for `get_gdfs()`."""
 
-    query: Query
-    layers: Layers
-    radius: float | None = None
-    dilate: float | None = None  # maybe float
-    rotation: float = 0  # rotation angle (in radians). Defaults to 0
-    circle: bool = False
+    boundary: gp.GeoDataFrame
 
-    def to_tuple(self):
-        """Serialize instance to tuple. useful for destruction assignment of attributes."""
-        return (
-            self.query,
-            self.layers,
-            self.radius,
-            self.dilate,
-            self.rotation,
-            self.circle,
+    @staticmethod
+    def _dilate(boundary, dilate):
+        # Apply dilation
+        boundary = ox.project_gdf(boundary)
+        boundary.geometry = boundary.geometry.buffer(dilate)
+        return boundary
+
+    @classmethod
+    def from_point(
+        cls,
+        point: tuple[float, float],
+        shape: Shape,
+        rotation: float = 0,
+        dilate: float = 0,
+    ) -> "Perimeter":
+        """Create perimeter from point of lat,lng."""
+        lat, lng = point
+
+        # Create GeoDataFrame from point
+        boundary = ox.project_gdf(
+            gp.GeoDataFrame(geometry=[Point((lng, lat))], crs="EPSG:4326")
         )
+
+        if shape.type == "circle":  # Circular shape
+            # use .buffer() to expand point into circle
+            boundary.geometry = boundary.geometry.buffer(shape.radius)
+        elif shape.type == "square":  # Square shape
+            x, y = np.concatenate(boundary.geometry[0].xy)
+            r = shape.radius
+            boundary = gp.GeoDataFrame(
+                geometry=[
+                    rotate(
+                        Polygon(
+                            [
+                                (x - r, y - r),
+                                (x + r, y - r),
+                                (x + r, y + r),
+                                (x - r, y + r),
+                            ]
+                        ),
+                        rotation,
+                    )
+                ],
+                crs=boundary.crs,
+            )
+        else:
+            raise NotImplementedError(f"{shape=} is not implemented.")
+
+        if dilate:
+            boundary = cls._dilate(boundary, dilate)
+        boundary = boundary.to_crs(4326)
+
+        return cls(boundary=boundary)
+
+    @classmethod
+    def from_geocode_point(
+        cls,
+        query: str,
+        shape: Shape,
+        rotation: float = 0,
+        dilate: float = 0,
+    ) -> "Perimeter":
+        """From point geocoded by query string to perimiter."""
+        point = ox.geocode(query)
+
+        return cls.from_point(
+            point,
+            shape=shape,
+            rotation=rotation,
+            dilate=dilate,
+        )
+
+    @classmethod
+    def from_geocode_gdf(cls, query: str, dilate: float = 0):
+        """Create perimeter from boundary returned from OSM."""
+        boundary = ox.geocode_to_gdf(query)
+
+        if dilate:
+            boundary = cls._dilate(boundary, dilate)
+        boundary = boundary.to_crs(4326)
+
+        return cls(boundary=boundary)
+
+    @classmethod
+    def from_gdf(cls, gdf: gp.GeoDataFrame) -> "Perimeter":
+        """Create perimeter from user provided gdf.
+
+        just use gdf asis for perimeter.
+        """
+        return cls(boundary=gdf)
 
 
 # Get a GeoDataFrame
 def _get_gdf(
     layer,
-    perimeter,
-    perimeter_tolerance=0,
+    boundary,
     tags=None,
     osmid=None,
     custom_filter=None,
-    **kwargs,
+    **ignore_kwargs,
 ) -> gp.GeoDataFrame:
-    # Apply tolerance to the perimeter
-    perimeter_with_tolerance = (
-        ox.project_gdf(perimeter).buffer(perimeter_tolerance).to_crs(4326)
-    )
-    perimeter_with_tolerance = unary_union(perimeter_with_tolerance.geometry).buffer(0)
+    # Apply tolerance to the boundary
+    # boundary_with_tolerance = ox.project_gdf(boundary).buffer(boundary_TOLERANCE).to_crs(4326)
+    # boundary_with_tolerance = unary_union(boundary_with_tolerance.geometry).buffer(0)
 
-    # Fetch from perimeter's bounding box, to avoid missing some geometries
-    bbox = box(*perimeter_with_tolerance.bounds)
+    boundary = unary_union(boundary.to_crs(4326).geometry)
+
+    # Fetch from boundary's bounding box, to avoid missing some geometries
+    bbox = box(*boundary.bounds)
 
     if layer in ["streets", "railway", "waterway"]:
         graph = ox.graph_from_polygon(
@@ -150,113 +229,21 @@ def _get_gdf(
     else:
         gdf = ox.geocode_to_gdf(osmid, by_osmid=True)
 
-    # Intersect with perimeter
-    gdf.geometry = gdf.geometry.intersection(perimeter_with_tolerance)
+    # Intersect with boundary
+    gdf.geometry = gdf.geometry.intersection(boundary)
     # gdf = gdf[~gdf.geometry.is_empty]
     gdf.drop(gdf[gdf.geometry.is_empty].index, inplace=True)
 
     return gdf
 
 
-# Parse query (by coordinates, OSMId or name)
-def _parse_query(query: Query):
-    if isinstance(query, gp.GeoDataFrame):
-        return "polygon"
-    elif isinstance(query, tuple):
-        return "coordinates"
-    elif re.match("""[A-Z][0-9]+""", query):
-        return "osmid"
-    else:
-        return "address"
-
-
-# Get circular or square boundary around point
-def _get_boundary(query, radius, circle=False, rotation=0):
-    # Get point from query
-    point = query if _parse_query(query) == "coordinates" else ox.geocode(query)
-    # Create GeoDataFrame from point
-    boundary = ox.project_gdf(
-        gp.GeoDataFrame(geometry=[Point(point[::-1])], crs="EPSG:4326")
-    )
-
-    if circle:  # Circular shape
-        # use .buffer() to expand point into circle
-        boundary.geometry = boundary.geometry.buffer(radius)
-    else:  # Square shape
-        x, y = np.concatenate(boundary.geometry[0].xy)
-        r = radius
-        boundary = gp.GeoDataFrame(
-            geometry=[
-                rotate(
-                    Polygon(
-                        [(x - r, y - r), (x + r, y - r), (x + r, y + r), (x - r, y + r)]
-                    ),
-                    rotation,
-                )
-            ],
-            crs=boundary.crs,
-        )
-
-    # Unproject
-    boundary = boundary.to_crs(4326)
-
-    return boundary
-
-
-# Get perimeter from query
-def _get_perimeter(
-    query, radius=None, by_osmid=False, circle=False, dilate=None, rotation=0, **kwargs
-):
-    if radius:
-        # Perimeter is a circular or square shape
-        perimeter = _get_boundary(query, radius, circle=circle, rotation=rotation)
-    elif _parse_query(query) == "polygon":
-        # Perimeter is a OSM or user-provided polygon
-        # Perimeter was already provided
-        perimeter = query
-    else:
-        # Fetch perimeter from OSM
-        perimeter = ox.geocode_to_gdf(
-            query,
-            by_osmid=by_osmid,
-            **kwargs,
-        )
-
-    # Apply dilation
-    perimeter = ox.project_gdf(perimeter)
-    if dilate is not None:
-        perimeter.geometry = perimeter.geometry.buffer(dilate)
-    perimeter = perimeter.to_crs(4326)
-
-    return perimeter
-
-
-def get_gdfs(get_arg: GetArg) -> GeoDataFrames:
+def get_gdfs(layers: Layers, perimeter: Perimeter) -> GeoDataFrames:
     """Fetch GeoDataFrames given query and a dictionary of layers."""
-    query, layers, radius, dilate, rotation, circle = get_arg.to_tuple()
-
-    # override layers
-    override_args = ["circle", "dilate"]
-    for layer in layers:
-        for arg in override_args:
-            if arg not in layers[layer]:
-                layers[layer][arg] = locals()[arg]
-
-    perimeter_kwargs = {}
-    if "perimeter" in layers:
-        perimeter_kwargs = deepcopy(layers["perimeter"])
-        perimeter_kwargs.pop("dilate")
-
-    # Get perimeter
-    perimeter = _get_perimeter(
-        query, radius=radius, rotation=-rotation, dilate=dilate, **perimeter_kwargs
-    )
-
     # Get other layers as GeoDataFrames
-    gdfs = {"perimeter": perimeter}
+    gdfs = {"perimeter": perimeter.boundary}
     gdfs.update(
         {
-            layer: _get_gdf(layer, perimeter, **kwargs)
+            layer: _get_gdf(layer, perimeter.boundary, **kwargs)
             for layer, kwargs in layers.items()
             if layer != "perimeter"
         }

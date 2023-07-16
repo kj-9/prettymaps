@@ -8,8 +8,9 @@ see also: https://pytest-regressions.readthedocs.io/en/latest/index.html.
 
 from prettymaps import plot
 from prettymaps.new_api import (
-    GetArg,
+    Perimeter,
     PlotArg,
+    Shape,
     TransformArg,
     get_gdfs,
     plot_gdfs,
@@ -46,7 +47,10 @@ def test_regression_plot_from_new_and_from_old(image_regression, original_datadi
     print(str(image))
 
     gdfs = get_gdfs(
-        GetArg(query=QUERY, radius=RADIOUS, dilate=preset.dilate, layers=preset.layers)
+        preset.layers,
+        Perimeter.from_geocode_point(
+            QUERY, Shape("square", RADIOUS), dilate=preset.dilate
+        ),
     )
 
     # do nothing

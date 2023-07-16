@@ -1,19 +1,6 @@
 """Test for arg types."""
 
-from prettymaps.new_api import GetArg, PlotArg, TransformArg
-
-
-def test_get_arg():
-    """Unit test for GetArg."""
-    arg = GetArg("test-query", {})
-    query, layers, radius, dilate, rotation, circle = arg.to_tuple()
-
-    assert query == arg.query
-    assert layers == arg.layers
-    assert radius == arg.radius
-    assert dilate == arg.dilate
-    assert rotation == arg.rotation
-    assert circle == arg.circle
+from prettymaps.new_api import PlotArg, TransformArg
 
 
 def test_transform_arg():
