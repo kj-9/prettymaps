@@ -1,7 +1,6 @@
 """Experimental new api for prettymaps."""
 
 import json
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, NamedTuple, NewType, TypeAlias
@@ -24,26 +23,6 @@ from shapely.geometry import (
 from shapely.ops import unary_union
 
 from .draw import Plot, PolygonPatch, create_background, draw_text, plot_gdf
-
-
-class Tuplable(ABC):
-    """Tubplable: abstract class to have `to_tuple`.
-
-    Abstract class serializable `self` to tuple.
-    Intended to implement `to_tuple` method which return each attribute of `self` in tuple.
-    Motivation is enabling type inference by write down each attribute when destruction like assignment of class attributes.
-    Usually, serialization mechanism like dataclass, pyserde, pydantic returns `Any` type, not useful for type check.
-    See also: https://github.com/kj-9/prettymaps/issues/14
-    """
-
-    @abstractmethod
-    def to_tuple(self) -> tuple:
-        """Serialize instance to tuple. useful for destruction assignment of attributes.
-
-        Implement like: `return (self.a, self.b, ...)`, elements ordered by definition in class
-        """
-        pass
-
 
 # types
 Query: TypeAlias = str | tuple[float, float] | gp.GeoDataFrame
@@ -252,8 +231,7 @@ def get_gdfs(layers: Layers, perimeter: Perimeter) -> GeoDataFrames:
     return GeoDataFrames(gdfs)
 
 
-@dataclass
-class TransformArg(Tuplable):
+class TransformArg(NamedTuple):
     """Dataclass represents arguments for get_gdfs.
 
     x: x-axis translation. Defaults to 0.
@@ -268,10 +246,6 @@ class TransformArg(Tuplable):
     scale_x: float = 1
     scale_y: float = 1
     rotation: float = 0
-
-    def to_tuple(self):
-        """Serialize instance to tuple. useful for destruction assignment of attributes."""
-        return (self.x, self.y, self.scale_x, self.scale_y, self.rotation)
 
 
 def transform_gdfs(gdfs: GeoDataFrames, transform_arg: TransformArg) -> GeoDataFrames:
@@ -293,7 +267,7 @@ def transform_gdfs(gdfs: GeoDataFrames, transform_arg: TransformArg) -> GeoDataF
     )
 
     # desturct arg
-    x, y, scale_x, scale_y, rotation = transform_arg.to_tuple()
+    x, y, scale_x, scale_y, rotation = transform_arg
 
     # Translation, scale & rotation
     collection = translate(collection, x, y)
@@ -309,8 +283,7 @@ def transform_gdfs(gdfs: GeoDataFrames, transform_arg: TransformArg) -> GeoDataF
     return gdfs
 
 
-@dataclass
-class PlotArg(Tuplable):
+class PlotArg(NamedTuple):
     """Dataclass represents arguments for plot_gdfs."""
 
     layers: Layers
@@ -321,24 +294,12 @@ class PlotArg(Tuplable):
     show: bool = True
     save_as: str | None = None
 
-    def to_tuple(self):
-        """Serialize instance to tuple. useful for destruction assignment of attributes."""
-        return (
-            self.layers,
-            self.style,
-            self.ax,
-            self.figsize,
-            self.credit,
-            self.show,
-            self.save_as,
-        )
-
 
 def plot_gdfs(gdfs: GeoDataFrames, plot_arg: PlotArg) -> Plot:
     """Plot gdfs."""
     # returnは色々ありうる。Plotデータクラス、PILオブジェクト。副作用として画像保存させるか、それは別メソッドにするか。
 
-    layers, style, ax, figsize, credit, show, save_as = plot_arg.to_tuple()
+    layers, style, ax, figsize, credit, show, save_as = plot_arg
 
     # 7. Create background GeoDataFrame and get (x,y) bounds
     background, xmin, ymin, xmax, ymax, dx, dy = create_background(gdfs, style)

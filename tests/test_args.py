@@ -6,7 +6,7 @@ from prettymaps.new_api import PlotArg, TransformArg
 def test_transform_arg():
     """Unit test for TransformArg."""
     arg = TransformArg(1, 2, 3, 4, 5)
-    x, y, scale_x, scale_y, rotation = arg.to_tuple()
+    x, y, scale_x, scale_y, rotation = arg
 
     assert x == arg.x
     assert y == arg.y
@@ -18,7 +18,7 @@ def test_transform_arg():
 def test_plot_arg():
     """Unit test for PlotArg."""
     arg = PlotArg(1, 2, 3, 4, 5)
-    layers, style, ax, figsize, credit, show, save_as = arg.to_tuple()
+    layers, style, ax, figsize, credit, show, save_as = arg
 
     assert layers == arg.layers
     assert style == arg.style
