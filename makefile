@@ -13,7 +13,7 @@ pip-install: pip-upgrade
 	pip install -e '.[test]'
 
 test:
-	python -m pytest tests/
+	python -m pytest tests/ -vv
 
 pre-commit:
 	pre-commit run --all-files --show-diff-on-failure
