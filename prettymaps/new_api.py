@@ -3,7 +3,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, NamedTuple, NewType, TypeAlias
+from typing import Literal, NamedTuple, NewType
 
 import geopandas as gp
 import numpy as np
@@ -25,14 +25,6 @@ from shapely.ops import unary_union
 from .draw import Plot, PolygonPatch, create_background, draw_text, plot_gdf
 
 # types
-Query: TypeAlias = str | tuple[float, float] | gp.GeoDataFrame
-"""Your query.
-Example:
-    - "Porto Alegre"
-    - (-30.0324999, -51.2303767) (lat/long coordinates)
-    - You can also provide a custom GeoDataFrame boundary as input
-"""
-
 # maybe dataclass is more suitable
 GeoDataFrames = NewType("GeoDataFrames", dict[str, gp.GeoDataFrame])
 Layers = NewType("Layers", dict[str, dict])  # osm layer for query
