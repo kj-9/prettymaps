@@ -1,6 +1,8 @@
 """Experimental new api for prettymaps."""
 
+import re
 import json
+import numpy as np
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass
@@ -18,11 +20,12 @@ from shapely.affinity import (
 from shapely.geometry import (
     GeometryCollection,
     box,
+    Point,
+    Polygon,
 )
 from shapely.ops import unary_union
 
 from .draw import Plot, PolygonPatch, create_background, draw_text, plot_gdf
-from .fetch import get_perimeter
 
 
 class Tuplable(ABC):
@@ -154,6 +157,81 @@ def _get_gdf(
 
     return gdf
 
+# Parse query (by coordinates, OSMId or name)
+def parse_query(query):
+    if isinstance(query, GeoDataFrame):
+        return "polygon"
+    elif isinstance(query, tuple):
+        return "coordinates"
+    elif re.match("""[A-Z][0-9]+""", query):
+        return "osmid"
+    else:
+        return "address"
+
+# Get circular or square boundary around point
+def get_boundary(query, radius, circle=False, rotation=0):
+
+    # Get point from query
+    point = query if parse_query(query) == "coordinates" else ox.geocode(query)
+    # Create GeoDataFrame from point
+    boundary = ox.project_gdf(
+        GeoDataFrame(geometry=[Point(point[::-1])], crs="EPSG:4326")
+    )
+
+    if circle:  # Circular shape
+        # use .buffer() to expand point into circle
+        boundary.geometry = boundary.geometry.buffer(radius)
+    else:  # Square shape
+        x, y = np.concatenate(boundary.geometry[0].xy)
+        r = radius
+        boundary = GeoDataFrame(
+            geometry=[
+                rotate(
+                    Polygon(
+                        [(x - r, y - r), (x + r, y - r),
+                         (x + r, y + r), (x - r, y + r)]
+                    ),
+                    rotation,
+                )
+            ],
+            crs=boundary.crs,
+        )
+
+    # Unproject
+    boundary = boundary.to_crs(4326)
+
+    return boundary
+
+# Get perimeter from query
+def get_perimeter(
+    query, radius=None, by_osmid=False, circle=False, dilate=None, rotation=0, **kwargs
+):
+
+    if radius:
+        # Perimeter is a circular or square shape
+        perimeter = get_boundary(
+            query, radius, circle=circle, rotation=rotation)
+    else:
+        # Perimeter is a OSM or user-provided polygon
+        if parse_query(query) == "polygon":
+            # Perimeter was already provided
+            perimeter = query
+        else:
+            # Fetch perimeter from OSM
+            perimeter = ox.geocode_to_gdf(
+                query,
+                by_osmid=by_osmid,
+                **kwargs,
+            )
+
+    # Apply dilation
+    perimeter = ox.project_gdf(perimeter)
+    if dilate is not None:
+        perimeter.geometry = perimeter.geometry.buffer(dilate)
+    perimeter = perimeter.to_crs(4326)
+
+    return perimeter
+
 
 def get_gdfs(get_arg: GetArg) -> GeoDataFrames:
     """Fetch GeoDataFrames given query and a dictionary of layers."""
@@ -165,6 +243,8 @@ def get_gdfs(get_arg: GetArg) -> GeoDataFrames:
         for arg in override_args:
             if arg not in layers[layer]:
                 layers[layer][arg] = locals()[arg]
+
+                
 
     perimeter_kwargs = {}
     if "perimeter" in layers:
