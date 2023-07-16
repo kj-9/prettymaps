@@ -20,6 +20,7 @@ from shapely.geometry import (
     Polygon,
     box,
 )
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
 from .draw import Plot, PolygonPatch, create_background, draw_text, plot_gdf
@@ -66,16 +67,26 @@ class Shape(NamedTuple):
 
 @dataclass
 class Perimeter:
-    """Dataclass of perimeter geodataframe for input for `get_gdfs()`."""
+    """Dataclass of perimeter geometry for input for `get_gdfs()`."""
 
-    boundary: gp.GeoDataFrame
+    gdf: gp.GeoDataFrame
+    geometry: BaseGeometry
 
     @staticmethod
-    def _dilate(boundary, dilate):
+    def _dilate(gdf, dilate):
         # Apply dilation
-        boundary = ox.project_gdf(boundary)
-        boundary.geometry = boundary.geometry.buffer(dilate)
-        return boundary
+        gdf = ox.project_gdf(gdf)
+        gdf.geometry = gdf.geometry.buffer(dilate)
+        return gdf
+
+    @staticmethod
+    def _to_geometry(gdf: gp.GeoDataFrame) -> BaseGeometry:
+        """gdf: gdf projected to crs 4326."""
+        # Apply tolerance to the gdf
+        # gdf_with_tolerance = ox.project_gdf(gdf).buffer(gdf_TOLERANCE).to_crs(4326)
+        # gdf_with_tolerance = unary_union(gdf_with_tolerance.geometry).buffer(0)
+
+        return unary_union(gdf.geometry)
 
     @classmethod
     def from_point(
@@ -89,17 +100,17 @@ class Perimeter:
         lat, lng = point
 
         # Create GeoDataFrame from point
-        boundary = ox.project_gdf(
+        perimeter = ox.project_gdf(
             gp.GeoDataFrame(geometry=[Point((lng, lat))], crs="EPSG:4326")
         )
 
         if shape.type == "circle":  # Circular shape
             # use .buffer() to expand point into circle
-            boundary.geometry = boundary.geometry.buffer(shape.radius)
+            perimeter.geometry = perimeter.geometry.buffer(shape.radius)
         elif shape.type == "square":  # Square shape
-            x, y = np.concatenate(boundary.geometry[0].xy)
+            x, y = np.concatenate(perimeter.geometry[0].xy)
             r = shape.radius
-            boundary = gp.GeoDataFrame(
+            perimeter = gp.GeoDataFrame(
                 geometry=[
                     rotate(
                         Polygon(
@@ -113,16 +124,17 @@ class Perimeter:
                         rotation,
                     )
                 ],
-                crs=boundary.crs,
+                crs=perimeter.crs,
             )
         else:
             raise NotImplementedError(f"{shape=} is not implemented.")
 
         if dilate:
-            boundary = cls._dilate(boundary, dilate)
-        boundary = boundary.to_crs(4326)
+            perimeter = cls._dilate(perimeter, dilate)
 
-        return cls(boundary=boundary)
+        perimeter = perimeter.to_crs(4326)
+
+        return cls(gdf=perimeter, geometry=cls._to_geometry(perimeter))
 
     @classmethod
     def from_geocode_point(
@@ -132,7 +144,7 @@ class Perimeter:
         rotation: float = 0,
         dilate: float = 0,
     ) -> "Perimeter":
-        """From point geocoded by query string to perimiter."""
+        """Create perimeter from a point geocoded by OSM."""
         point = ox.geocode(query)
 
         return cls.from_point(
@@ -144,14 +156,18 @@ class Perimeter:
 
     @classmethod
     def from_geocode_gdf(cls, query: str, dilate: float = 0):
-        """Create perimeter from boundary returned from OSM."""
-        boundary = ox.geocode_to_gdf(query)
+        """Create perimeter from a geodataframe represents the boundary of the object geocoded by OSM.
+
+        This function may return perimeter which is not circle nor square,
+        bound to some area (e.g. distirict), returned from OSM.
+        """
+        perimeter = ox.geocode_to_gdf(query)
 
         if dilate:
-            boundary = cls._dilate(boundary, dilate)
-        boundary = boundary.to_crs(4326)
+            perimeter = cls._dilate(perimeter, dilate)
 
-        return cls(boundary=boundary)
+        perimeter = perimeter.to_crs(4326)
+        return cls(gdf=perimeter, geometry=cls._to_geometry(perimeter))
 
     @classmethod
     def from_gdf(cls, gdf: gp.GeoDataFrame) -> "Perimeter":
@@ -159,26 +175,21 @@ class Perimeter:
 
         just use gdf asis for perimeter.
         """
-        return cls(boundary=gdf)
+        gdf = gdf.to_crs(4326)
+        return cls(gdf=gdf, geometry=cls._to_geometry(gdf))
 
 
 # Get a GeoDataFrame
 def _get_gdf(
     layer,
-    boundary,
+    perimeter: Perimeter,
     tags=None,
     osmid=None,
     custom_filter=None,
     **ignore_kwargs,
 ) -> gp.GeoDataFrame:
-    # Apply tolerance to the boundary
-    # boundary_with_tolerance = ox.project_gdf(boundary).buffer(boundary_TOLERANCE).to_crs(4326)
-    # boundary_with_tolerance = unary_union(boundary_with_tolerance.geometry).buffer(0)
-
-    boundary = unary_union(boundary.to_crs(4326).geometry)
-
     # Fetch from boundary's bounding box, to avoid missing some geometries
-    bbox = box(*boundary.bounds)
+    bbox = box(*perimeter.geometry.bounds)
 
     if layer in ["streets", "railway", "waterway"]:
         graph = ox.graph_from_polygon(
@@ -201,7 +212,7 @@ def _get_gdf(
         gdf = ox.geocode_to_gdf(osmid, by_osmid=True)
 
     # Intersect with boundary
-    gdf.geometry = gdf.geometry.intersection(boundary)
+    gdf.geometry = gdf.geometry.intersection(perimeter.geometry)
     # gdf = gdf[~gdf.geometry.is_empty]
     gdf.drop(gdf[gdf.geometry.is_empty].index, inplace=True)
 
@@ -211,10 +222,10 @@ def _get_gdf(
 def get_gdfs(layers: Layers, perimeter: Perimeter) -> GeoDataFrames:
     """Fetch GeoDataFrames given query and a dictionary of layers."""
     # Get other layers as GeoDataFrames
-    gdfs = {"perimeter": perimeter.boundary}
+    gdfs = {"perimeter": perimeter.gdf}
     gdfs.update(
         {
-            layer: _get_gdf(layer, perimeter.boundary, **kwargs)
+            layer: _get_gdf(layer, perimeter, **kwargs)
             for layer, kwargs in layers.items()
             if layer != "perimeter"
         }
