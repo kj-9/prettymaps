@@ -1,8 +1,7 @@
 """Experimental new api for prettymaps."""
 
-import re
 import json
-import numpy as np
+import re
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass
@@ -10,6 +9,7 @@ from pathlib import Path
 from typing import NewType, TypeAlias
 
 import geopandas as gp
+import numpy as np
 import osmnx as ox
 from matplotlib import pyplot as plt
 from shapely.affinity import (
@@ -19,9 +19,9 @@ from shapely.affinity import (
 )
 from shapely.geometry import (
     GeometryCollection,
-    box,
     Point,
     Polygon,
+    box,
 )
 from shapely.ops import unary_union
 
@@ -157,9 +157,10 @@ def _get_gdf(
 
     return gdf
 
+
 # Parse query (by coordinates, OSMId or name)
-def parse_query(query):
-    if isinstance(query, GeoDataFrame):
+def _parse_query(query: Query):
+    if isinstance(query, gp.GeoDataFrame):
         return "polygon"
     elif isinstance(query, tuple):
         return "coordinates"
@@ -168,14 +169,14 @@ def parse_query(query):
     else:
         return "address"
 
-# Get circular or square boundary around point
-def get_boundary(query, radius, circle=False, rotation=0):
 
+# Get circular or square boundary around point
+def _get_boundary(query, radius, circle=False, rotation=0):
     # Get point from query
-    point = query if parse_query(query) == "coordinates" else ox.geocode(query)
+    point = query if _parse_query(query) == "coordinates" else ox.geocode(query)
     # Create GeoDataFrame from point
     boundary = ox.project_gdf(
-        GeoDataFrame(geometry=[Point(point[::-1])], crs="EPSG:4326")
+        gp.GeoDataFrame(geometry=[Point(point[::-1])], crs="EPSG:4326")
     )
 
     if circle:  # Circular shape
@@ -184,12 +185,11 @@ def get_boundary(query, radius, circle=False, rotation=0):
     else:  # Square shape
         x, y = np.concatenate(boundary.geometry[0].xy)
         r = radius
-        boundary = GeoDataFrame(
+        boundary = gp.GeoDataFrame(
             geometry=[
                 rotate(
                     Polygon(
-                        [(x - r, y - r), (x + r, y - r),
-                         (x + r, y + r), (x - r, y + r)]
+                        [(x - r, y - r), (x + r, y - r), (x + r, y + r), (x - r, y + r)]
                     ),
                     rotation,
                 )
@@ -202,27 +202,25 @@ def get_boundary(query, radius, circle=False, rotation=0):
 
     return boundary
 
+
 # Get perimeter from query
-def get_perimeter(
+def _get_perimeter(
     query, radius=None, by_osmid=False, circle=False, dilate=None, rotation=0, **kwargs
 ):
-
     if radius:
         # Perimeter is a circular or square shape
-        perimeter = get_boundary(
-            query, radius, circle=circle, rotation=rotation)
-    else:
+        perimeter = _get_boundary(query, radius, circle=circle, rotation=rotation)
+    elif _parse_query(query) == "polygon":
         # Perimeter is a OSM or user-provided polygon
-        if parse_query(query) == "polygon":
-            # Perimeter was already provided
-            perimeter = query
-        else:
-            # Fetch perimeter from OSM
-            perimeter = ox.geocode_to_gdf(
-                query,
-                by_osmid=by_osmid,
-                **kwargs,
-            )
+        # Perimeter was already provided
+        perimeter = query
+    else:
+        # Fetch perimeter from OSM
+        perimeter = ox.geocode_to_gdf(
+            query,
+            by_osmid=by_osmid,
+            **kwargs,
+        )
 
     # Apply dilation
     perimeter = ox.project_gdf(perimeter)
@@ -244,15 +242,13 @@ def get_gdfs(get_arg: GetArg) -> GeoDataFrames:
             if arg not in layers[layer]:
                 layers[layer][arg] = locals()[arg]
 
-                
-
     perimeter_kwargs = {}
     if "perimeter" in layers:
         perimeter_kwargs = deepcopy(layers["perimeter"])
         perimeter_kwargs.pop("dilate")
 
     # Get perimeter
-    perimeter = get_perimeter(
+    perimeter = _get_perimeter(
         query, radius=radius, rotation=-rotation, dilate=dilate, **perimeter_kwargs
     )
 
