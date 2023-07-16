@@ -17,7 +17,7 @@ from shapely.geometry import (
 )
 
 from .draw import Plot, PolygonPatch, create_background, draw_text, plot_gdf
-from .fetch import get_gdf, get_perimeter
+from .fetch import get_perimeter
 
 
 class Tuplable(ABC):
@@ -101,6 +101,85 @@ class GetArg(Tuplable):
             self.rotation,
             self.circle,
         )
+
+# Get a GeoDataFrame
+def get_gdf(
+    layer,
+    perimeter,
+    perimeter_tolerance=0,
+    tags=None,
+    osmid=None,
+    custom_filter=None,
+    union=False,
+    elevation=None,
+    vert_exag=1,
+    azdeg=90,
+    altdeg=80,
+    pad=1,
+    min_height=30,
+    max_height=None,
+    n_curves=100,
+    **kwargs
+):
+
+    # Supress shapely deprecation warning
+    warnings.simplefilter("ignore", ShapelyDeprecationWarning)
+
+    # Apply tolerance to the perimeter
+    perimeter_with_tolerance = (
+        ox.project_gdf(perimeter).buffer(perimeter_tolerance).to_crs(4326)
+    )
+    perimeter_with_tolerance = unary_union(
+        perimeter_with_tolerance.geometry).buffer(0)
+
+    # Fetch from perimeter's bounding box, to avoid missing some geometries
+    bbox = box(*perimeter_with_tolerance.bounds)
+
+    if layer == "hillshade":
+        gdf = get_hillshade(
+            mask_elevation(get_elevation(elevation), perimeter),
+            pad=pad,
+            azdeg=azdeg,
+            altdeg=altdeg,
+            vert_exag=vert_exag,
+            min_height=min_height,
+            max_height=max_height,
+        )
+    elif layer == "level_curves":
+        gdf = get_level_curves(
+            mask_elevation(get_elevation(elevation), perimeter),
+            pad=pad,
+            n_curves=n_curves,
+            min_height=min_height,
+            max_height=max_height,
+        )
+    elif layer in ["streets", "railway", "waterway"]:
+        graph = ox.graph_from_polygon(
+            bbox,
+            custom_filter=custom_filter,
+            truncate_by_edge=True,
+        )
+        gdf = ox.graph_to_gdfs(graph, nodes=False)
+    elif layer == "coastline":
+        # Fetch geometries from OSM
+        gdf = ox.geometries_from_polygon(
+            bbox, tags={tags: True} if type(tags) == str else tags
+        )
+    else:
+        if osmid is None:
+            # Fetch geometries from OSM
+            gdf = ox.geometries_from_polygon(
+                bbox, tags={tags: True} if type(tags) == str else tags
+            )
+        else:
+            gdf = ox.geocode_to_gdf(osmid, by_osmid=True)
+
+    # Intersect with perimeter
+    gdf.geometry = gdf.geometry.intersection(perimeter_with_tolerance)
+    # gdf = gdf[~gdf.geometry.is_empty]
+    gdf.drop(gdf[gdf.geometry.is_empty].index, inplace=True)
+
+    return gdf
 
 
 def get_gdfs(get_arg: GetArg) -> GeoDataFrames:
