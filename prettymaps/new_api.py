@@ -9,9 +9,12 @@ from typing import NewType, TypeAlias
 
 import geopandas as gp
 import osmnx as ox
-import shapely.affinity
-import shapely.ops
 from matplotlib import pyplot as plt
+from shapely.affinity import (
+    rotate,
+    scale,
+    translate,
+)
 from shapely.geometry import (
     GeometryCollection,
     box,
@@ -230,9 +233,9 @@ def transform_gdfs(gdfs: GeoDataFrames, transform_arg: TransformArg) -> GeoDataF
     x, y, scale_x, scale_y, rotation = transform_arg.to_tuple()
 
     # Translation, scale & rotation
-    collection = shapely.affinity.translate(collection, x, y)
-    collection = shapely.affinity.scale(collection, scale_x, scale_y)
-    collection = shapely.affinity.rotate(collection, rotation)
+    collection = translate(collection, x, y)
+    collection = scale(collection, scale_x, scale_y)
+    collection = rotate(collection, rotation)
     # Update geometries
     for i, layer in enumerate(gdfs):
         gdfs[layer].geometry = list(collection.geoms[i].geoms)
