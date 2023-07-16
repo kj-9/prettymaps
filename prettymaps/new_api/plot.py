@@ -412,30 +412,28 @@ def plot_gdf(
 
 def plot_gdfs(gdfs: GeoDataFrames, plot_arg: PlotArg) -> None:
     """Plot gdfs."""
-    # returnは色々ありうる。Plotデータクラス、PILオブジェクト。副作用として画像保存させるか、それは別メソッドにするか。
-
     layers, style, ax, figsize, credit, show, save_as = plot_arg
 
-    # 7. Create background GeoDataFrame and get (x,y) bounds
+    # Create background GeoDataFrame
     background = create_background(gdfs, style)
 
-    # 2. Init matplotlib figure
+    # Init matplotlib figure
     if ax is None:
         plt.figure(figsize=figsize)
         ax = plt.subplot(111, aspect="equal")
 
-    # 8.2. Draw layers in matplotlib mode
-    for layer in gdfs:
+    # Draw layers in matplotlib mode
+    for layer, gdf in gdfs.items():
         if layer in layers:
             plot_gdf(
                 layer,
-                gdfs[layer],
+                gdf,
                 ax,
-                width=layers[layer]["width"] if "width" in layers[layer] else None,
-                **(style[layer] if layer in style else {}),
+                width=layers[layer].get("width"),
+                **(style.get(layer, {})),
             )
 
-    # 9. Draw background
+    # Draw background
     if "background" in style:
         zorder = (
             style["background"].pop("zorder") if "zorder" in style["background"] else -1
@@ -448,11 +446,11 @@ def plot_gdfs(gdfs: GeoDataFrames, plot_arg: PlotArg) -> None:
             )
         )
 
-    # 10. Draw credit message
-    if credit is not None:
+    # Draw credit message
+    if credit:
         draw_text(credit, background)
 
-    # 11. Ajust figure and create PIL Image
+    # Ajust figure and create PIL Image
     # Adjust axis
     ax.axis("off")
     ax.axis("equal")
