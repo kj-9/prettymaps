@@ -39,17 +39,15 @@ class PlotArg(NamedTuple):
     save_as: str | None = None
 
 
-def create_background(
-    gdfs: dict[str, gp.GeoDataFrame], style: dict[str, dict]
-) -> tuple[BaseGeometry, float, float, float, float, float, float]:
+def create_background(gdfs: GeoDataFrames, style: Style) -> BaseGeometry:
     """Create a background layer given a collection of GeoDataFrames.
 
     Args:
-        gdfs (Dict[str, gp.GeoDataFrame]): Dictionary of GeoDataFrames
-        style (Dict[str, dict]): Dictionary of matplotlib style parameters
+        gdfs: Dictionary of GeoDataFrames
+        style: Dictionary of matplotlib style parameters
 
     Returns:
-        Tuple[BaseGeometry, float, float, float, float, float, float]: background geometry, bounds, width and height
+        background geometry
     """
     # Create background
     background_pad = 1.1
@@ -67,11 +65,7 @@ def create_background(
     if "background" in style and "dilate" in style["background"]:
         background = background.buffer(style["background"].pop("dilate"))
 
-    # Get bounds
-    xmin, ymin, xmax, ymax = background.bounds
-    dx, dy = xmax - xmin, ymax - ymin
-
-    return background, xmin, ymin, xmax, ymax, dx, dy
+    return background
 
 
 def override_params(default_dict: dict, new_dict: dict) -> dict:
@@ -423,7 +417,7 @@ def plot_gdfs(gdfs: GeoDataFrames, plot_arg: PlotArg) -> None:
     layers, style, ax, figsize, credit, show, save_as = plot_arg
 
     # 7. Create background GeoDataFrame and get (x,y) bounds
-    background, xmin, ymin, xmax, ymax, dx, dy = create_background(gdfs, style)
+    background = create_background(gdfs, style)
 
     # 2. Init matplotlib figure
     if ax is None:
