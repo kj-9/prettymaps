@@ -8,7 +8,6 @@ from typing import NamedTuple
 import geopandas as gp
 import matplotlib
 import numpy as np
-import osmnx as ox
 import shapely.affinity
 import shapely.ops
 from matplotlib import pyplot as plt
@@ -20,7 +19,6 @@ from shapely.geometry import (
     MultiPolygon,
     Point,
     Polygon,
-    box,
 )
 from shapely.geometry.base import BaseGeometry
 
@@ -37,35 +35,6 @@ class PlotArg(NamedTuple):
     credit: None = None
     show: bool = True
     save_as: str | None = None
-
-
-def create_background(gdfs: GeoDataFrames, style: Style) -> BaseGeometry:
-    """Create a background layer given a collection of GeoDataFrames.
-
-    Args:
-        gdfs: Dictionary of GeoDataFrames
-        style: Dictionary of matplotlib style parameters
-
-    Returns:
-        background geometry
-    """
-    # Create background
-    background_pad = 1.1
-    if "background" in style and "pad" in style["background"]:
-        background_pad = style["background"].pop("pad")
-
-    background = shapely.affinity.scale(
-        box(
-            *shapely.ops.unary_union(ox.project_gdf(gdfs["perimeter"]).geometry).bounds
-        ),
-        background_pad,
-        background_pad,
-    )
-
-    if "background" in style and "dilate" in style["background"]:
-        background = background.buffer(style["background"].pop("dilate"))
-
-    return background
 
 
 def override_params(default_dict: dict, new_dict: dict) -> dict:
@@ -372,9 +341,6 @@ def plot_gdfs(gdfs: GeoDataFrames, plot_arg: PlotArg) -> None:
     """Plot gdfs."""
     layers, style, ax, figsize, credit, show, save_as = plot_arg
 
-    # Create background GeoDataFrame
-    background = create_background(gdfs, style)
-
     # Init matplotlib figure
     if ax is None:
         plt.figure(figsize=figsize)
@@ -382,14 +348,15 @@ def plot_gdfs(gdfs: GeoDataFrames, plot_arg: PlotArg) -> None:
 
     # Draw layers in matplotlib mode
     for layer, gdf in gdfs.items():
-        if layer in layers:
-            plot_gdf(
-                layer,
-                gdf,
-                ax,
-                width=layers[layer].get("width"),
-                **(style.get(layer, {})),
-            )
+        if layer in ["background", "perimeter"]:
+            continue
+        plot_gdf(
+            layer,
+            gdf,
+            ax,
+            width=layers[layer].get("width"),  # TODO: width should be in style
+            **(style.get(layer, {})),
+        )
 
     # Draw background
     if "background" in style:
@@ -398,7 +365,7 @@ def plot_gdfs(gdfs: GeoDataFrames, plot_arg: PlotArg) -> None:
         )
         ax.add_patch(
             PolygonPatch(
-                background,
+                gdfs["background"],
                 **{k: v for k, v in style["background"].items() if k != "dilate"},
                 zorder=zorder,
             )
@@ -406,7 +373,7 @@ def plot_gdfs(gdfs: GeoDataFrames, plot_arg: PlotArg) -> None:
 
     # Draw credit message
     if credit:
-        draw_text(credit, background)
+        draw_text(credit, gdfs["background"])
 
     # Ajust figure and create PIL Image
     # Adjust axis
