@@ -22,6 +22,8 @@ from shapely.ops import unary_union
 
 from .types import GeoDataFrames, Layers
 
+CRS_EPSG_4326 = "EPSG:4326"
+
 
 class Shape(NamedTuple):
     """Shape parameters for creating perimeter from given point."""
@@ -32,26 +34,28 @@ class Shape(NamedTuple):
 
 @dataclass
 class Perimeter:
-    """Dataclass of perimeter geometry for input for `get_gdfs()`."""
+    """Dataclass of perimeter geometry for input for `get_gdfs()`.
+
+    every attribute is projected in UTM
+
+    """
 
     gdf: gp.GeoDataFrame
-    geometry: BaseGeometry
 
     @staticmethod
-    def _dilate(gdf, dilate):
+    def _dilate(gdf: gp.GeoDataFrame, dilate: float):
+        """Dilate gdf."""
         # Apply dilation
-        gdf = ox.project_gdf(gdf)
+
         gdf.geometry = gdf.geometry.buffer(dilate)
         return gdf
 
-    @staticmethod
-    def _to_geometry(gdf: gp.GeoDataFrame) -> BaseGeometry:
+    def to_geometry_4326(self) -> BaseGeometry:
         """gdf: gdf projected to crs 4326."""
         # Apply tolerance to the gdf
         # gdf_with_tolerance = ox.project_gdf(gdf).buffer(gdf_TOLERANCE).to_crs(4326)
         # gdf_with_tolerance = unary_union(gdf_with_tolerance.geometry).buffer(0)
-
-        return unary_union(gdf.geometry)
+        return unary_union(self.gdf.to_crs(CRS_EPSG_4326).geometry)
 
     @classmethod
     def from_point(
@@ -65,9 +69,11 @@ class Perimeter:
         lat, lng = point
 
         # Create GeoDataFrame from point
-        perimeter = ox.project_gdf(
-            gp.GeoDataFrame(geometry=[Point((lng, lat))], crs="EPSG:4326")
-        )
+        # created from lng lat point so prject CRS_EPSG_4326 first
+        perimeter = gp.GeoDataFrame(geometry=[Point((lng, lat))], crs=CRS_EPSG_4326)
+
+        # to manupulate by radius in meter, project to UTM
+        perimeter = ox.project_gdf(perimeter)
 
         if shape.type == "circle":  # Circular shape
             # use .buffer() to expand point into circle
@@ -97,9 +103,7 @@ class Perimeter:
         if dilate:
             perimeter = cls._dilate(perimeter, dilate)
 
-        perimeter = perimeter.to_crs(4326)
-
-        return cls(gdf=perimeter, geometry=cls._to_geometry(perimeter))
+        return cls(gdf=perimeter)
 
     @classmethod
     def from_geocode_point(
@@ -131,8 +135,7 @@ class Perimeter:
         if dilate:
             perimeter = cls._dilate(perimeter, dilate)
 
-        perimeter = perimeter.to_crs(4326)
-        return cls(gdf=perimeter, geometry=cls._to_geometry(perimeter))
+        return cls(gdf=perimeter)
 
     @classmethod
     def from_gdf(cls, gdf: gp.GeoDataFrame) -> "Perimeter":
@@ -140,8 +143,38 @@ class Perimeter:
 
         just use gdf asis for perimeter.
         """
-        gdf = gdf.to_crs(4326)
-        return cls(gdf=gdf, geometry=cls._to_geometry(gdf))
+        gdf = ox.project_gdf(gdf)
+        return cls(gdf=gdf)
+
+    def to_bbox_in_4326(self) -> Polygon:
+        """Convert Polygon of bbox projected in EPSG:4326."""
+        gdf = self.gdf.to_crs(CRS_EPSG_4326)
+        pl = unary_union(gdf.geometry)
+
+        return box(*pl.bounds)
+
+    def to_bbox_in_utm(self) -> Polygon:
+        """Convert Polygon of bbox projected in UTM."""
+        pl = unary_union(self.gdf.geometry)
+
+        return box(*pl.bounds)
+
+    def create_background(self, pad: float = 1.1) -> BaseGeometry:
+        """Create a background.
+
+        Args:
+            pad: padding from perimeter
+
+        Returns:
+            background geometry
+        """
+        background = scale(
+            self.to_bbox_in_utm(),
+            pad,
+            pad,
+        )
+
+        return background
 
 
 # Get a GeoDataFrame
@@ -152,9 +185,9 @@ def _get_gdf(
     osmid=None,
     custom_filter=None,
     **ignore_kwargs,
-) -> gp.GeoDataFrame:
+) -> gp.GeoDataFrame | None:
     # Fetch from boundary's bounding box, to avoid missing some geometries
-    bbox = box(*perimeter.geometry.bounds)
+    bbox = perimeter.to_bbox_in_4326()
 
     if layer in ["streets", "railway", "waterway"]:
         graph = ox.graph_from_polygon(
@@ -177,24 +210,35 @@ def _get_gdf(
         gdf = ox.geocode_to_gdf(osmid, by_osmid=True)
 
     # Intersect with boundary
-    gdf.geometry = gdf.geometry.intersection(perimeter.geometry)
-    # gdf = gdf[~gdf.geometry.is_empty]
+    gdf.geometry = gdf.geometry.intersection(perimeter.to_geometry_4326())
     gdf.drop(gdf[gdf.geometry.is_empty].index, inplace=True)
 
-    return gdf
+    if len(gdf) == 0:
+        return None
+    else:
+        return ox.project_gdf(gdf)  # project in utm
 
 
 def get_gdfs(layers: Layers, perimeter: Perimeter) -> GeoDataFrames:
     """Fetch GeoDataFrames given query and a dictionary of layers."""
     # Get other layers as GeoDataFrames
     gdfs = {"perimeter": perimeter.gdf}
-    gdfs.update(
-        {
-            layer: _get_gdf(layer, perimeter, **kwargs)
-            for layer, kwargs in layers.items()
-            if layer != "perimeter"
-        }
-    )
+
+    for layer, kwargs in layers.items():
+        if layer == "perimeter":
+            continue
+        gdf = _get_gdf(layer, perimeter, **kwargs)
+
+        if gdf is None:
+            continue
+
+        gdfs.update({layer: gdf})
+
+    gdfs[
+        "background"
+    ] = (
+        perimeter.create_background()
+    )  # could be a single method for updating only background
 
     return GeoDataFrames(gdfs)
 
@@ -246,6 +290,6 @@ def transform_gdfs(gdfs: GeoDataFrames, transform_arg: TransformArg) -> GeoDataF
         gdfs[layer].geometry = list(collection.geoms[i].geoms)
         # Reproject
         if len(gdfs[layer]) > 0:
-            gdfs[layer] = ox.project_gdf(gdfs[layer], to_crs="EPSG:4326")
+            gdfs[layer] = ox.project_gdf(gdfs[layer], to_crs=CRS_EPSG_4326)
 
     return gdfs
