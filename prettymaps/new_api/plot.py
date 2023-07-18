@@ -111,7 +111,7 @@ def PolygonPatch(shape: BaseGeometry, **kwargs) -> PathPatch:
     """
     # Init vertices and codes lists
     vertices, codes = [], []
-    for poly in shape.geoms if isinstance(shape, Iterable) else [shape]:
+    for poly in shape.geoms if hasattr(shape, "geoms") else [shape]:
         # Get polygon's exterior and interiors
         exterior = np.array(poly.exterior.xy)
         interiors = [np.array(interior.xy) for interior in poly.interiors]
@@ -214,37 +214,25 @@ def geometries_to_shapely(
 
 
 def gdf_to_shapely(
-    layer: str,
-    gdf: gp.GeoDataFrame,
-    width: dict | float | None = None,
-    point_size: float | None = None,
-    line_width: float | None = None,
-    **kwargs,
-) -> GeometryCollection:
+    layer: str, gdf: gp.GeoDataFrame, width: float | None = None
+) -> GeometryCollection | BaseGeometry:
     """Convert a dict of GeoDataFrames to a dict of shapely geometries.
 
     Args:
-        layer (str): Layer name
-        gdf (gp.GeoDataFrame): Input GeoDataFrame
-        width (Optional[Union[dict, float]], optional): Street network width. Can be either a dictionary or a float. Defaults to None.
-        point_size (Optional[float], optional): Point geometries (1D) will be dilated by this amount. Defaults to None.
-        line_width (Optional[float], optional): Line geometries (2D) will be dilated by this amount. Defaults to None.
+        layer: Layer name
+        gdf: Input GeoDataFrame
+        width: Street network width. Can be either a dictionary or a float. Defaults to None.
 
     Returns:
         GeometryCollection: Output GeoDataFrame
     """
-    # Project gdf
-    try:
-        gdf = ox.project_gdf(gdf)
-    except:
-        pass
-
     if layer in ["streets", "railway", "waterway"]:
-        geometries = graph_to_shapely(gdf, width)
+        if width:
+            geometries = graph_to_shapely(gdf, width)
+        else:
+            geometries = graph_to_shapely(gdf)
     else:
-        geometries = geometries_to_shapely(
-            gdf, point_size=point_size, line_width=line_width
-        )
+        geometries = geometries_to_shapely(gdf, point_size=None, line_width=None)
 
     return geometries
 
@@ -254,37 +242,27 @@ def plot_gdf(
     gdf: gp.GeoDataFrame,
     ax: matplotlib.axes.Axes,
     palette: list[str] | None = None,
-    width: dict | float | None = None,
-    union: bool = False,
-    dilate_points: float | None = None,
-    dilate_lines: float | None = None,
+    width: float | None = None,
     hatch_c=None,
     **kwargs,
 ) -> None:
     """Plot a layer.
 
     Args:
-        layer (str): layer name
-        gdf (gp.GeoDataFrame): GeoDataFrame
-        ax (matplotlib.axes.Axes): matplotlib axis object
-        palette (Optional[List[str]], optional): Color palette. Defaults to None.
-        width (Optional[Union[dict, float]], optional): Street widths. Either a dictionary or a float. Defaults to None.
-        union (bool, optional): Whether to join geometries. Defaults to False.
-        dilate_points (Optional[float], optional): Amount of dilation to be applied to point (1D) geometries. Defaults to None.
-        dilate_lines (Optional[float], optional): Amount of dilation to be applied to line (2D) geometries. Defaults to None.
+        layer: layer name
+        gdf: GeoDataFrame
+        ax : matplotlib axis object
+        palette : Color palette. Defaults to None.
+        width : Street widths. Either a dictionary or a float. Defaults to None.
+        hatch_c: todo: comment
+        **kwargs: args passed to `PolygonPatch()`
 
     Raises:
         Exception: _description_
     """
     # Convert GDF to shapely geometries
-    geometries = gdf_to_shapely(
-        layer, gdf, width, point_size=dilate_points, line_width=dilate_lines
-    )
-    geometries = geometries.geoms if isinstance(geometries, Iterable) else [geometries]
-
-    # Unite geometries
-    if union:
-        geometries = shapely.ops.unary_union(geometries)
+    geometries = gdf_to_shapely(layer, gdf, width)
+    geometries = geometries.geoms if hasattr(geometries, "geoms") else [geometries]
 
     if (palette is None) and ("fc" in kwargs) and (type(kwargs["fc"]) != str):
         palette = kwargs.pop("fc")
