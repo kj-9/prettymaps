@@ -38,21 +38,7 @@
       }
     },
     "perimeter": {},
-    "streets": {
-      "width": {
-        "cycleway": 3.5,
-        "footway": 1,
-        "motorway": 5,
-        "pedestrian": 2,
-        "primary": 4.5,
-        "residential": 3,
-        "secondary": 4,
-        "service": 2,
-        "tertiary": 3.5,
-        "trunk": 5,
-        "unclassified": 2
-      }
-    },
+    "streets": {},
     "water": {
       "tags": {
         "natural": [
@@ -115,6 +101,19 @@
       "ec": "#475657",
       "fc": "#2F3737",
       "lw": 0,
+      "width": {
+        "cycleway": 3.5,
+        "footway": 1,
+        "motorway": 5,
+        "pedestrian": 2,
+        "primary": 4.5,
+        "residential": 3,
+        "secondary": 4,
+        "service": 2,
+        "tertiary": 3.5,
+        "trunk": 5,
+        "unclassified": 2
+      },
       "zorder": 4
     },
     "water": {

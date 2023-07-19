@@ -328,11 +328,11 @@ def plot_gdfs(gdfs: GeoDataFrames, plot_arg: PlotArg) -> None:
     for layer, gdf in gdfs.items():
         if layer in ["background", "perimeter"]:
             continue
+
         plot_gdf(
             layer,
             gdf,
             ax,
-            width=layers[layer].get("width"),  # TODO: width should be in style
             **(style.get(layer, {})),
         )
 

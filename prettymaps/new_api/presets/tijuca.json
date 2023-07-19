@@ -34,16 +34,7 @@
       }
     },
     "perimeter": {},
-    "streets": {
-      "width": {
-        "motorway": 12,
-        "primary": 11,
-        "residential": 8,
-        "secondary": 10,
-        "tertiary": 9,
-        "trunk": 12
-      }
-    },
+    "streets": {},
     "water": {
       "tags": {
         "natural": "water"
@@ -101,6 +92,14 @@
       "fc": "#898989",
       "hatch": "ooo...",
       "lw": 0,
+      "width": {
+        "motorway": 12,
+        "primary": 11,
+        "residential": 8,
+        "secondary": 10,
+        "tertiary": 9,
+        "trunk": 12
+      },
       "zorder": 3
     },
     "water": {

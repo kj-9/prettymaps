@@ -33,19 +33,7 @@
     },
     "perimeter": {},
     "streets": {
-      "custom_filter": "[\"highway\"~\"motorway|trunk|primary|secondary|tertiary|residential|service|unclassified|pedestrian|footway\"]",
-      "width": {
-        "footway": 1,
-        "motorway": 5,
-        "pedestrian": 2,
-        "primary": 4.5,
-        "residential": 3,
-        "secondary": 4,
-        "service": 2,
-        "tertiary": 3.5,
-        "trunk": 5,
-        "unclassified": 2
-      }
+      "custom_filter": "[\"highway\"~\"motorway|trunk|primary|secondary|tertiary|residential|service|unclassified|pedestrian|footway\"]"
     },
     "water": {
       "tags": {
@@ -104,6 +92,18 @@
       "ec": "#475657",
       "fc": "#2F3737",
       "lw": 0,
+      "width": {
+        "footway": 1,
+        "motorway": 5,
+        "pedestrian": 2,
+        "primary": 4.5,
+        "residential": 3,
+        "secondary": 4,
+        "service": 2,
+        "tertiary": 3.5,
+        "trunk": 5,
+        "unclassified": 2
+      },
       "zorder": 3
     },
     "water": {

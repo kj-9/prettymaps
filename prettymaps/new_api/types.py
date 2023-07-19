@@ -27,7 +27,7 @@ class Preset:
 
 def presets_directory() -> Path:
     """Returns presets directory."""
-    return Path(__file__).resolve().parents[1] / "presets"
+    return Path(__file__).resolve().parent / "presets"
 
 
 def read_preset(name: str) -> Preset:

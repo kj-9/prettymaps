@@ -7,16 +7,7 @@
       }
     },
     "perimeter": {},
-    "streets": {
-      "width": {
-        "motorway": 5,
-        "primary": 4,
-        "residential": 2,
-        "secondary": 3,
-        "tertiary": 2,
-        "trunk": 5
-      }
-    }
+    "streets": {}
   },
   "radius": 400,
   "style": {
@@ -38,6 +29,14 @@
     "streets": {
       "fc": "#000",
       "lw": 0,
+      "width": {
+        "motorway": 5,
+        "primary": 4,
+        "residential": 2,
+        "secondary": 3,
+        "tertiary": 2,
+        "trunk": 5
+      },
       "zorder": 4
     }
   }

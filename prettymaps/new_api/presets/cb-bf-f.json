@@ -26,18 +26,7 @@
         "leisure": "park"
       }
     },
-    "streets": {
-      "width": {
-        "footway": 3,
-        "path": 3,
-        "pedestrian": 3,
-        "primary": 6,
-        "residential": 3.5,
-        "secondary": 5,
-        "tertiary": 4,
-        "trunk": 6
-      }
-    },
+    "streets": {},
     "water": {
       "tags": {
         "natural": [
@@ -84,6 +73,16 @@
       "ec": "#2F3737",
       "fc": "#F1E6D0",
       "lw": 1.5,
+      "width": {
+        "footway": 3,
+        "path": 3,
+        "pedestrian": 3,
+        "primary": 6,
+        "residential": 3.5,
+        "secondary": 5,
+        "tertiary": 4,
+        "trunk": 6
+      },
       "zorder": 3
     },
     "water": {

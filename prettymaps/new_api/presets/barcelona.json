@@ -19,15 +19,7 @@
     "perimeter": {
       "circle": false
     },
-    "streets": {
-      "width": {
-        "footway": 1,
-        "primary": 5,
-        "residential": 2,
-        "secondary": 4,
-        "tertiary": 3
-      }
-    }
+    "streets": {}
   },
   "radius": 500,
   "style": {
@@ -64,6 +56,13 @@
       "ec": "#475657",
       "fc": "#2F3737",
       "lw": 0,
+      "width": {
+        "footway": 1,
+        "primary": 5,
+        "residential": 2,
+        "secondary": 4,
+        "tertiary": 3
+      },
       "zorder": 4
     },
     "water": {
