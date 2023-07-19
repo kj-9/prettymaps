@@ -6,6 +6,8 @@ force regen image by `pythom -m test tests/ --force-regen`
 see also: https://pytest-regressions.readthedocs.io/en/latest/index.html.
 """
 
+import pytest
+
 from prettymaps import plot
 from prettymaps.new_api.get import (
     Perimeter,
@@ -20,38 +22,59 @@ from prettymaps.new_api.plot import (
 )
 from prettymaps.new_api.types import read_preset
 
-# plot parameters
+# fixed plot parameters
 DIFF_THRESHOLD = 3  # % of difference between images
-QUERY = "barra da tijuca"
 DILATE = (0,)
-PRESET = "tijuca"  # using this style since not inlucde palette key which introduce randomness of color
 RADIOUS = 300  # restrict radius for speed
 
-# regression image name
-REG_IMAGE = "plot_from_old_api"
+# preset and query
+preset_name_and_query = [
+    (
+        "tijuca",
+        "barra da tijuca",
+    ),  # using this style since not inlucde palette key which introduce randomness of color
+    ("minimal", "barra da tijuca"),
+]
 
 
-def test_regression_plot_from_old(image_regression, original_datadir):
+@pytest.mark.parametrize(
+    "preset_name_and_query",
+    preset_name_and_query,
+    ids=[preset for preset, _ in preset_name_and_query],
+)
+def test_regression_plot_from_old(
+    image_regression, original_datadir, preset_name_and_query
+):
     """Tests old plot api: prettymaps.plot is generating same plot as before."""
-    image = original_datadir / "tmp-tijuca-300.png"
+    preset_name, query = preset_name_and_query
+    image = original_datadir / f"tmp-{preset_name}.png"
     print(f"{str(image)=}")
-    plot(QUERY, radius=RADIOUS, save_as=str(image), preset=PRESET)
-    image_regression.check(
-        image.read_bytes(), basename=REG_IMAGE, diff_threshold=DIFF_THRESHOLD
-    )
+    plot(query, radius=RADIOUS, save_as=str(image), preset=preset_name)
+    image_regression.check(image.read_bytes(), diff_threshold=DIFF_THRESHOLD)
 
 
-def test_regression_plot_from_new_and_from_old(image_regression, original_datadir):
-    """Tests regression of plot from new api to plot from old api."""
-    preset = read_preset(PRESET)
+@pytest.mark.parametrize(
+    "preset_name_and_query",
+    preset_name_and_query,
+    ids=[preset for preset, _ in preset_name_and_query],
+)
+def test_regression_plot_from_new_to_old(
+    image_regression, original_datadir, preset_name_and_query
+):
+    """Tests regression of plot from new api to plot from old api.
 
-    image = original_datadir / "tmp-tijuca-300-new-api.png"
+    Yields plot from new api and compare image from old api (which is produced and git checked in by previous `test_regression_plot_from_old`.)
+    """
+    preset_name, query = preset_name_and_query
+    preset = read_preset(preset_name)
+
+    image = original_datadir / f"tmp-{preset_name}-new-api.png"
     print(str(image))
 
     gdfs = get_gdfs(
         preset.layers,
         Perimeter.from_geocode_point(
-            QUERY, Shape("square", RADIOUS), dilate=preset.dilate
+            query, Shape("square", RADIOUS), dilate=preset.dilate
         ),
     )
 
@@ -64,6 +87,7 @@ def test_regression_plot_from_new_and_from_old(image_regression, original_datadi
         plot_arg=PlotArg(layers=preset.layers, style=preset.style, save_as=str(image)),
     )
 
+    reg_image = f"test_regression_plot_from_old_{preset_name}_"  # base image name in tests/test_plot dir to compare
     image_regression.check(
-        image.read_bytes(), basename=REG_IMAGE, diff_threshold=DIFF_THRESHOLD
+        image.read_bytes(), basename=reg_image, diff_threshold=DIFF_THRESHOLD
     )
